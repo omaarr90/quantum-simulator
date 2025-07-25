@@ -19,7 +19,7 @@ class ComplexTest {
     void testMultiplication() {
         Complex a = new Complex(1, 2);
         Complex b = new Complex(3, 4);
-        Complex result = a.multiply(b);
+        Complex result = a.mul(b);
         assertEquals(-5.0, result.real(), 1e-9);
         assertEquals(10.0, result.imaginary(), 1e-9);
     }
@@ -28,7 +28,7 @@ class ComplexTest {
     void testNorm() {
         Complex z = new Complex(3, 4);
         assertEquals(25.0, z.norm());
-        assertEquals(5.0, z.abs(), 1e-9);
+        assertEquals(5.0, z.modulus(), 1e-9);
     }
 
     @Test

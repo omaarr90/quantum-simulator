@@ -7,8 +7,14 @@ allprojects {
     group = "com.omaarr90"
     version = "1.0-SNAPSHOT"
 
+    apply(plugin = "java")
+
     repositories {
         mavenCentral()
+    }
+
+    java {
+        toolchain.languageVersion.set(JavaLanguageVersion.of(24))
     }
 
     tasks.withType<Test> {

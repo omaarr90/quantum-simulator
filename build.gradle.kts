@@ -1,6 +1,8 @@
 plugins {
     id("java")
     id("org.graalvm.buildtools.native") version "0.11.0" apply false
+    id("com.diffplug.spotless") version "6.25.0" apply false
+    id("com.github.spotbugs") version "6.0.15" apply false
 }
 
 allprojects {
@@ -8,6 +10,9 @@ allprojects {
     version = "1.0-SNAPSHOT"
 
     apply(plugin = "java")
+    apply (plugin = "org.graalvm.buildtools.native")
+    apply (plugin = "com.diffplug.spotless")
+    apply (plugin = "com.github.spotbugs")
 
     repositories {
         mavenCentral()

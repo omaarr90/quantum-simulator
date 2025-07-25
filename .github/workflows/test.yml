@@ -1,0 +1,26 @@
+name: test
+
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java: [ '24' ]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up GraalVM JDK
+        uses: graalvm/setup-graalvm@v1
+        with:
+          distribution: graalvm-community
+          java-version: ${{ matrix.java }}
+          cache: gradle        # speeds up subsequent runs
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run JUnit suite
+        run: ./gradlew test --no-daemon --scan

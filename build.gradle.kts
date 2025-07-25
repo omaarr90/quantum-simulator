@@ -22,7 +22,23 @@ allprojects {
         toolchain.languageVersion.set(JavaLanguageVersion.of(24))
     }
 
-    tasks.withType<Test> {
+    tasks.compileJava {
+        options.encoding = "UTF-8"
+        options.compilerArgs = listOf("-parameters", "-Xdoclint:none", "-Xlint:all", "-Xlint:-exports",
+                                      "-Xlint:-serial", "-Xlint:-try", "-Xlint:-requires-transitive-automatic",
+                                      "-Xlint:-requires-automatic", "-Xlint:-missing-explicit-ctor",
+                                      "-Xlint:-processing")
+    }
+
+    tasks.compileTestJava {
+        options.encoding = "UTF-8"
+        options.compilerArgs = listOf("-parameters", "-Xdoclint:none", "-Xlint:all", "-Xlint:-exports",
+            "-Xlint:-serial", "-Xlint:-try", "-Xlint:-requires-transitive-automatic",
+            "-Xlint:-requires-automatic", "-Xlint:-missing-explicit-ctor",
+            "-Xlint:-processing")
+    }
+
+    tasks.test {
         useJUnitPlatform()
     }
 }

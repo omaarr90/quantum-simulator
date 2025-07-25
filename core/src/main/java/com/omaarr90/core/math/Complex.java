@@ -1,27 +1,27 @@
 package com.omaarr90.core.math;
 
-public record Complex(double re, double im) {
+public record Complex(double real, double imaginary) {
 
     public static final Complex ZERO = new Complex(0.0, 0.0);
     public static final Complex ONE = new Complex(1.0, 0.0);
     public static final Complex I = new Complex(0.0, 1.0);
 
     public Complex add(Complex other) {
-        return new Complex(this.re + other.re, this.im + other.im);
+        return new Complex(this.real + other.real, this.imaginary + other.imaginary);
     }
 
     public Complex multiply(Complex other) {
-        double real = this.re * other.re - this.im * other.im;
-        double imag = this.re * other.im + this.im * other.re;
+        double real = this.real * other.real - this.imaginary * other.imaginary;
+        double imag = this.real * other.imaginary + this.imaginary * other.real;
         return new Complex(real, imag);
     }
 
     public Complex conjugate() {
-        return new Complex(this.re, -this.im);
+        return new Complex(this.real, -this.imaginary);
     }
 
     public double norm() {
-        return this.re * this.re + this.im * this.im;
+        return this.real * this.real + this.imaginary * this.imaginary;
     }
 
     public double abs() {
@@ -29,13 +29,13 @@ public record Complex(double re, double im) {
     }
 
     public Polar toPolar() {
-        return new Polar(abs(), Math.atan2(im, re));
+        return new Polar(abs(), Math.atan2(imaginary, real));
     }
 
     public record Polar(double r, double theta) {}
 
     @Override
     public String toString() {
-        return String.format("%.5f %c %.5fi", re, im < 0 ? '-' : '+', Math.abs(im));
+        return String.format("%.5f %c %.5fi", real, imaginary < 0 ? '-' : '+', Math.abs(imaginary));
     }
 }

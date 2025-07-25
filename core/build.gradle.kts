@@ -1,12 +1,5 @@
 plugins {
-    id("java")
-}
-
-group = "com.omaarr90"
-version = "1.0-SNAPSHOT"
-
-repositories {
-    mavenCentral()
+    id("java-library")
 }
 
 dependencies {
@@ -14,6 +7,16 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter")
 }
 
-tasks.test {
-    useJUnitPlatform()
+var incubatorArguments = listOf("--enable-preview", "--add-modules", "jdk.incubator.vector")
+
+tasks.withType<JavaCompile> {
+    options.compilerArgs = options.compilerArgs + incubatorArguments
+}
+
+tasks.withType<Test> {
+    jvmArgs = incubatorArguments
+}
+
+tasks.withType<JavaExec> {
+    jvmArgs = incubatorArguments
 }

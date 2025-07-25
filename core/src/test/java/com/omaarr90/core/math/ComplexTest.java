@@ -11,8 +11,8 @@ class ComplexTest {
         Complex a = new Complex(2.0, 3.0);
         Complex b = new Complex(1.0, -1.0);
         Complex result = a.add(b);
-        assertEquals(3.0, result.re());
-        assertEquals(2.0, result.im());
+        assertEquals(3.0, result.real());
+        assertEquals(2.0, result.imaginary());
     }
 
     @Test
@@ -20,8 +20,8 @@ class ComplexTest {
         Complex a = new Complex(1, 2);
         Complex b = new Complex(3, 4);
         Complex result = a.multiply(b);
-        assertEquals(-5.0, result.re(), 1e-9);
-        assertEquals(10.0, result.im(), 1e-9);
+        assertEquals(-5.0, result.real(), 1e-9);
+        assertEquals(10.0, result.imaginary(), 1e-9);
     }
 
     @Test

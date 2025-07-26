@@ -5,6 +5,10 @@ plugins {
 dependencies {
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
+    
+    // Engine modules for ServiceLoader discovery during testing
+    testRuntimeOnly(project(":engines:statevector"))
+    testRuntimeOnly(project(":engines:stabilizer"))
 }
 
 var incubatorArguments = listOf("--enable-preview", "--add-modules", "jdk.incubator.vector")

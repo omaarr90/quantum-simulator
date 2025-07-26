@@ -11,6 +11,7 @@ application {
 
 dependencies {
     implementation(project(":core"))
+    implementation(project(":parser"))
 
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")

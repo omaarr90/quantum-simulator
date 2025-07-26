@@ -34,7 +34,9 @@ tasks.register("jmhSmoke") {
     
     doLast {
         javaexec {
-            classpath = configurations.jmhRuntimeClasspath.get()
+            classpath = configurations.jmhRuntimeClasspath.get() + 
+                       sourceSets.main.get().runtimeClasspath +
+                       sourceSets.getByName("jmh").runtimeClasspath
             mainClass.set("org.openjdk.jmh.Main")
             jvmArgs("--add-modules", "jdk.incubator.vector", "--enable-preview")
             args("-f", "1", "-wi", "1", "-i", "1", ".*ComplexArrayBenchmark.*")

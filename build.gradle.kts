@@ -3,6 +3,7 @@ plugins {
     id("org.graalvm.buildtools.native") version "0.11.0" apply false
     id("com.diffplug.spotless") version "6.25.0" apply false
     id("com.github.spotbugs") version "6.0.15" apply false
+    id("org.jetbrains.dokka") version "1.9.20" apply false
 }
 
 allprojects {
@@ -13,6 +14,7 @@ allprojects {
     apply (plugin = "org.graalvm.buildtools.native")
     apply (plugin = "com.diffplug.spotless")
     apply (plugin = "com.github.spotbugs")
+    apply (plugin = "org.jetbrains.dokka")
 
     repositories {
         mavenCentral()
@@ -40,5 +42,33 @@ allprojects {
 
     tasks.test {
         useJUnitPlatform()
+    }
+
+    // Configure Spotless for code formatting
+    configure<com.diffplug.gradle.spotless.SpotlessExtension> {
+        java {
+            googleJavaFormat("1.22.0").aosp().reflowLongStrings()
+            target("src/**/*.java")
+            targetExclude("**/generated/**", "**/build/**")
+        }
+        kotlin {
+            ktfmt("0.46").kotlinlangStyle()
+            target("src/**/*.kt")
+            targetExclude("**/generated/**", "**/build/**")
+        }
+    }
+
+    // Configure SpotBugs for static analysis
+    configure<com.github.spotbugs.snom.SpotBugsExtension> {
+        ignoreFailures.set(false)
+        showStackTraces.set(true)
+        showProgress.set(true)
+        effort.set(com.github.spotbugs.snom.Effort.MAX)
+        reportLevel.set(com.github.spotbugs.snom.Confidence.MEDIUM)
+    }
+
+    // Make build fail on Spotless violations
+    tasks.named("check") {
+        dependsOn("spotlessCheck")
     }
 }

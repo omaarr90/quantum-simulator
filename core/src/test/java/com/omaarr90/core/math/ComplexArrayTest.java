@@ -1,12 +1,12 @@
 package com.omaarr90.core.math;
 
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
+import org.junit.jupiter.api.Test;
+
 /**
- * Unit tests for {@link ComplexArray} covering the key arithmetic operations
- * and edge‑cases.  All assertions are performed with a 1e‑12 tolerance.
+ * Unit tests for {@link ComplexArray} covering the key arithmetic operations and edge‑cases. All
+ * assertions are performed with a 1e‑12 tolerance.
  */
 public class ComplexArrayTest {
 
@@ -129,7 +129,8 @@ public class ComplexArrayTest {
         ComplexArray expected = a.copy();
         for (int i = 0; i < n; i++) {
             Complex c = expected.get(i);
-            expected.set(i, new Complex(c.real() + scalar.real(), c.imaginary() + scalar.imaginary()));
+            expected.set(
+                    i, new Complex(c.real() + scalar.real(), c.imaginary() + scalar.imaginary()));
         }
 
         // SIMD / scalar mix result
@@ -172,21 +173,22 @@ public class ComplexArrayTest {
         // Test with aligned size (assuming species length is power of 2)
         ComplexArray aligned = new ComplexArray(64);
         ComplexArray unaligned = new ComplexArray(65);
-        
+
         // Note: actual alignment depends on the species length at runtime
         // We just test that the method doesn't throw and returns a boolean
         boolean alignedResult = aligned.isAligned();
         boolean unalignedResult = unaligned.isAligned();
-        
+
         assertTrue(alignedResult || !alignedResult); // Always true, just testing it doesn't throw
-        assertTrue(unalignedResult || !unalignedResult); // Always true, just testing it doesn't throw
+        assertTrue(
+                unalignedResult || !unalignedResult); // Always true, just testing it doesn't throw
     }
 
     @Test
     void input_validation_works() {
         // Test negative size
         assertThrows(IllegalArgumentException.class, () -> new ComplexArray(-1));
-        
+
         // Test index bounds
         ComplexArray a = new ComplexArray(5);
         assertThrows(IndexOutOfBoundsException.class, () -> a.get(-1));
@@ -200,23 +202,24 @@ public class ComplexArrayTest {
         // This test simulates the scenario where Vector API is disabled
         // We can't easily disable it at runtime, but we can test with small arrays
         // that would use scalar fallback for the tail elements
-        
+
         int n = 3; // Small size likely to use scalar fallback
         ComplexArray a = randomArray(n);
         Complex scalar = new Complex(1.5, -2.5);
-        
+
         // Test broadcastAdd with small array
         ComplexArray expected = a.copy();
         for (int i = 0; i < n; i++) {
             Complex c = expected.get(i);
-            expected.set(i, new Complex(c.real() + scalar.real(), c.imaginary() + scalar.imaginary()));
+            expected.set(
+                    i, new Complex(c.real() + scalar.real(), c.imaginary() + scalar.imaginary()));
         }
-        
+
         ComplexArray actual = a.copy().broadcastAdd(scalar);
         for (int i = 0; i < n; i++) {
             assertEqualComplex(expected.get(i), actual.get(i));
         }
-        
+
         // Test conjugateInPlace with small array
         ComplexArray b = randomArray(n);
         ComplexArray expectedConj = b.copy();
@@ -224,7 +227,7 @@ public class ComplexArrayTest {
             Complex c = expectedConj.get(i);
             expectedConj.set(i, new Complex(c.real(), -c.imaginary()));
         }
-        
+
         ComplexArray actualConj = b.copy().conjugateInPlace();
         for (int i = 0; i < n; i++) {
             assertEqualComplex(expectedConj.get(i), actualConj.get(i));
@@ -236,7 +239,7 @@ public class ComplexArrayTest {
         int n = 128;
         ComplexArray a = randomArray(n);
         ComplexArray b = randomArray(n);
-        
+
         // Avoid division by zero
         for (int i = 0; i < n; i++) {
             Complex c = b.get(i);
@@ -357,15 +360,15 @@ public class ComplexArrayTest {
         // Test aligned size
         ComplexArray aligned = ComplexArray.createAligned(64);
         assertEquals(64, aligned.size());
-        
+
         // Test unaligned size
         ComplexArray unaligned = ComplexArray.createAligned(65);
         assertEquals(65, unaligned.size());
-        
+
         // Test zero size
         ComplexArray zero = ComplexArray.createAligned(0);
         assertEquals(0, zero.size());
-        
+
         // Test negative size throws
         assertThrows(IllegalArgumentException.class, () -> ComplexArray.createAligned(-1));
     }
@@ -382,47 +385,46 @@ public class ComplexArrayTest {
         int n = 10;
         ComplexArray original = randomArray(n);
         ComplexArray other = randomArray(n);
-        
+
         // Store original values
         Complex[] originalValues = new Complex[n];
         for (int i = 0; i < n; i++) {
             originalValues[i] = original.get(i);
         }
-        
+
         // Test that norms() and norms2() don't modify original
         double[] norms = original.norms();
         double[] norms2 = original.norms2();
-        
+
         for (int i = 0; i < n; i++) {
             assertEqualComplex(originalValues[i], original.get(i));
         }
-        
+
         // Test that dotProduct doesn't modify original
         Complex dotProduct = original.dotProduct(other);
-        
+
         for (int i = 0; i < n; i++) {
             assertEqualComplex(originalValues[i], original.get(i));
         }
-        
+
         // Test that copy() creates independent instance
         ComplexArray copy = original.copy();
         assertNotSame(original, copy);
         copy.scaleInPlace(2.0);
-        
+
         // Original should be unchanged
         for (int i = 0; i < n; i++) {
             assertEqualComplex(originalValues[i], original.get(i));
         }
-        
+
         // Test that asView() doesn't expose mutability
         ComplexArrayView view = original.asView();
         assertNotNull(view);
         assertEquals(original.size(), view.size());
-        
+
         // View should provide access to same data
         for (int i = 0; i < n; i++) {
             assertEqualComplex(original.get(i), view.get(i));
         }
     }
-
 }

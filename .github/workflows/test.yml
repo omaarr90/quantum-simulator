@@ -1,4 +1,4 @@
-name: test
+name: CI
 
 on:
   push:
@@ -6,21 +6,67 @@ on:
   pull_request:
 
 jobs:
-  unit-tests:
+  test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java: [ '24' ]
+        java-distribution: 
+          - { name: 'Temurin', distribution: 'temurin' }
+          - { name: 'GraalVM CE', distribution: 'graalvm-community' }
+        java-version: [ '24' ]
+    name: Test with ${{ matrix.java-distribution.name }} JDK ${{ matrix.java-version }}
+    
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up GraalVM JDK
-        uses: graalvm/setup-graalvm@v1
+      - name: Set up JDK ${{ matrix.java-version }} (${{ matrix.java-distribution.name }})
+        uses: actions/setup-java@v4
+        if: matrix.java-distribution.distribution == 'temurin'
         with:
-          distribution: graalvm-community
-          java-version: ${{ matrix.java }}
-          cache: gradle        # speeds up subsequent runs
+          distribution: ${{ matrix.java-distribution.distribution }}
+          java-version: ${{ matrix.java-version }}
+          cache: gradle
+
+      - name: Set up GraalVM JDK ${{ matrix.java-version }}
+        uses: graalvm/setup-graalvm@v1
+        if: matrix.java-distribution.distribution == 'graalvm-community'
+        with:
+          distribution: ${{ matrix.java-distribution.distribution }}
+          java-version: ${{ matrix.java-version }}
+          cache: gradle
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Run JUnit suite
+      - name: Cache Native Image artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/native-build-cache
+            **/build/native/nativeCompile
+          key: ${{ runner.os }}-native-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-native-
+
+      - name: Run Spotless check
+        run: ./gradlew spotlessCheck --no-daemon
+
+      - name: Run SpotBugs check
+        run: ./gradlew spotbugsMain --no-daemon
+
+      - name: Run JUnit tests
         run: ./gradlew test --no-daemon --scan
+
+      - name: Build Native Image (GraalVM only)
+        if: matrix.java-distribution.distribution == 'graalvm-community'
+        run: ./gradlew :cli:nativeCompile --no-daemon
+
+      - name: Run JMH smoke benchmark (GraalVM only)
+        if: matrix.java-distribution.distribution == 'graalvm-community'
+        run: ./gradlew :benchmarks:jmhSmoke --no-daemon
+
+      - name: Upload JMH results
+        if: matrix.java-distribution.distribution == 'graalvm-community'
+        uses: actions/upload-artifact@v4
+        with:
+          name: jmh-results-${{ matrix.java-version }}
+          path: benchmarks/build/reports/jmh/
+          retention-days: 30

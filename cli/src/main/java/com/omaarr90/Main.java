@@ -6,20 +6,19 @@ import com.omaarr90.parser.OpenQasmParser;
 import com.omaarr90.parser.ParseException;
 import com.omaarr90.parser.qasm.OpenQasm3Lexer;
 import com.omaarr90.parser.qasm.OpenQasm3Parser;
-import org.antlr.v4.runtime.*;
-import org.antlr.v4.runtime.tree.ParseTree;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import org.antlr.v4.runtime.*;
+import org.antlr.v4.runtime.tree.ParseTree;
 
 /**
- * Main entry point for the quantum simulator CLI.
- * Supports running circuits from OpenQASM files or using built-in examples.
+ * Main entry point for the quantum simulator CLI. Supports running circuits from OpenQASM files or
+ * using built-in examples.
  */
 public class Main {
-    
+
     public static void main(String[] args) {
         if (args.length == 0) {
             runDefaultDemo();
@@ -46,36 +45,37 @@ public class Main {
             System.exit(1);
         }
     }
-    
+
     private static void runDefaultDemo() {
         System.out.println("Running default demo circuit...\n");
-        
-        var circuit = CircuitBuilder.of(3)
-                                    .h(0)
-                                    .cx(0, 1)
-                                    .rz(1, Math.PI / 2)
-                                    .barrier()          // full barrier
-                                    .measureAll()
-                                    .build();
+
+        var circuit =
+                CircuitBuilder.of(3)
+                        .h(0)
+                        .cx(0, 1)
+                        .rz(1, Math.PI / 2)
+                        .barrier() // full barrier
+                        .measureAll()
+                        .build();
 
         displayCircuitInfo(circuit);
     }
-    
+
     private static void runQasmFile(String filePath, boolean debugParse) {
         try {
             Path qasmFile = Paths.get(filePath);
             System.out.println("Parsing OpenQASM file: " + qasmFile.toAbsolutePath());
-            
+
             if (debugParse) {
                 printParseTree(qasmFile);
                 System.out.println();
             }
-            
+
             Circuit circuit = OpenQasmParser.parse(qasmFile);
-            
+
             System.out.println("Successfully parsed OpenQASM circuit!\n");
             displayCircuitInfo(circuit);
-            
+
         } catch (ParseException e) {
             System.err.println("Parse error: " + e.getMessage());
             System.exit(1);
@@ -88,31 +88,31 @@ public class Main {
             System.exit(1);
         }
     }
-    
+
     private static void printParseTree(Path qasmFile) throws IOException {
         String source = Files.readString(qasmFile);
-        
+
         // Create input stream from source
         CharStream input = CharStreams.fromString(source);
-        
+
         // Create lexer
         OpenQasm3Lexer lexer = new OpenQasm3Lexer(input);
-        
+
         // Create token stream
         CommonTokenStream tokens = new CommonTokenStream(lexer);
-        
+
         // Create parser
         OpenQasm3Parser parser = new OpenQasm3Parser(tokens);
-        
+
         // Parse the program
         ParseTree tree = parser.program();
-        
+
         // Print the parse tree
         System.out.println("Parse Tree:");
         System.out.println("===========");
         System.out.println(tree.toStringTree(parser));
     }
-    
+
     private static void displayCircuitInfo(Circuit circuit) {
         System.out.println("Circuit Information:");
         System.out.println("==================");
@@ -134,11 +134,14 @@ public class Main {
         // Show measurements
         if (circuit.hasMeasurements()) {
             System.out.println("\nMeasurements:");
-            circuit.measureMap().forEach((qubit, cbit) ->
-                System.out.println("  Qubit " + qubit + " -> Classical bit " + cbit));
+            circuit.measureMap()
+                    .forEach(
+                            (qubit, cbit) ->
+                                    System.out.println(
+                                            "  Qubit " + qubit + " -> Classical bit " + cbit));
         }
     }
-    
+
     private static void printUsage() {
         System.out.println("Quantum Simulator CLI");
         System.out.println("====================");
@@ -146,8 +149,10 @@ public class Main {
         System.out.println("Usage:");
         System.out.println("  qsim                           Run default demo circuit");
         System.out.println("  qsim run -f <file>             Run OpenQASM file");
-        System.out.println("  qsim run -f <file> --debug-parse   Run OpenQASM file with parse tree output");
-        System.out.println("  qsim --debug-parse -f <file>   Run OpenQASM file with parse tree output");
+        System.out.println(
+                "  qsim run -f <file> --debug-parse   Run OpenQASM file with parse tree output");
+        System.out.println(
+                "  qsim --debug-parse -f <file>   Run OpenQASM file with parse tree output");
         System.out.println("  qsim --help, -h                Show this help message");
         System.out.println();
         System.out.println("Examples:");

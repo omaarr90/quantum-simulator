@@ -1,6 +1,84 @@
 # Quantum Simulator
 
+[![CI](https://github.com/omaarr90/quantum-simulator/actions/workflows/test.yml/badge.svg)](https://github.com/omaarr90/quantum-simulator/actions/workflows/test.yml)
+[![codecov](https://codecov.io/gh/omaarr90/quantum-simulator/branch/main/graph/badge.svg)](https://codecov.io/gh/omaarr90/quantum-simulator)
+
 A modular quantum circuit simulation framework with pluggable simulation engines.
+
+## Quick Start
+
+### Prerequisites
+
+- **GraalVM 24** or **OpenJDK 24** with preview features enabled
+- **Required GraalVM version**: GraalVM CE 24.0.1+ for native image compilation
+
+### Installation
+
+1. Clone the repository:
+```bash
+git clone https://github.com/omaarr90/quantum-simulator.git
+cd quantum-simulator
+```
+
+2. Build the project:
+```bash
+./gradlew build
+```
+
+3. Build native image (requires GraalVM):
+```bash
+./gradlew :cli:nativeCompile
+```
+
+### Running Examples
+
+#### Using the CLI
+
+Run a simple Bell state circuit:
+```bash
+# Using JVM
+./gradlew :cli:run
+
+# Using native image (after building)
+./cli/build/native/nativeCompile/cli
+```
+
+#### Using OpenQASM files
+
+```bash
+# Run with a QASM file
+./cli/build/native/nativeCompile/cli path/to/circuit.qasm
+
+# Example QASM content (bell.qasm):
+OPENQASM 3.0;
+include "stdgates.inc";
+
+qubit[2] q;
+bit[2] c;
+
+h q[0];
+cx q[0], q[1];
+measure q -> c;
+```
+
+#### Programmatic Usage
+
+```java
+import com.omaarr90.core.circuit.CircuitBuilder;
+import com.omaarr90.core.engine.SimulatorEngineRegistry;
+
+// Build a quantum circuit
+var circuit = CircuitBuilder.of(2)
+    .h(0)                    // Hadamard gate on qubit 0
+    .cx(0, 1)               // CNOT gate
+    .measureAll()           // Measure all qubits
+    .build();
+
+// Run simulation with state vector engine
+var engine = SimulatorEngineRegistry.getEngine("statevector");
+var result = engine.run(circuit);
+System.out.println("Result: " + result);
+```
 
 ## Available Engines
 
@@ -118,5 +196,70 @@ To run tests:
 
 To build native image:
 ```bash
-./gradlew nativeCompile
+./gradlew :cli:nativeCompile
 ```
+
+To run benchmarks:
+```bash
+# Full benchmark suite
+./gradlew :benchmarks:jmh
+
+# Smoke benchmark (CI-friendly)
+./gradlew :benchmarks:jmhSmoke
+```
+
+To check code formatting:
+```bash
+# Check formatting
+./gradlew spotlessCheck
+
+# Apply formatting
+./gradlew spotlessApply
+```
+
+To run static analysis:
+```bash
+./gradlew spotbugsMain
+```
+
+## Documentation
+
+### API Documentation
+
+- **[Javadoc/Dokka Documentation](./build/dokka/html/index.html)** - Complete API documentation
+
+Generate documentation:
+```bash
+./gradlew dokkaHtml
+```
+
+### Performance Benchmarks
+
+JMH benchmark results are available in the CI artifacts and can be generated locally:
+```bash
+./gradlew :benchmarks:jmh
+# Results will be in benchmarks/build/reports/jmh/
+```
+
+### Native Image
+
+The CLI can be compiled to a native executable using GraalVM:
+- **Image size**: ~61MB (well within 80-150MB target)
+- **Startup time**: Near-instantaneous
+- **Memory usage**: Reduced compared to JVM
+
+## Architecture
+
+The simulator follows a modular architecture with pluggable engines:
+
+```
+quantum-simulator/
+├── core/           # Core simulation framework
+├── cli/            # Command-line interface
+├── parser/         # OpenQASM 3.0 parser
+├── benchmarks/     # JMH performance benchmarks
+├── engines/        # Simulation engines
+│   ├── statevector/    # State vector simulation
+│   ├── stabilizer/     # Stabilizer formalism
+│   └── noop/          # No-operation (testing)
+└── noise/          # Noise models (future)

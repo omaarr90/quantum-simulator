@@ -42,6 +42,7 @@ public final class ComplexArray {
 
     private final double[] realParts;
     private final double[] imaginaryParts;
+    private final int logicalSize;
 
     /**
      * Creates an uninitialised ComplexArray of {@code size} elements.
@@ -54,6 +55,7 @@ public final class ComplexArray {
         }
         this.realParts = new double[size];
         this.imaginaryParts = new double[size];
+        this.logicalSize = size;
     }
 
     /**
@@ -67,9 +69,36 @@ public final class ComplexArray {
         }
         this.realParts = realParts;
         this.imaginaryParts = imaginaryParts;
+        this.logicalSize = realParts.length;
+    }
+
+    /**
+     * Creates a ComplexArray from existing <em>Structure‑of‑Arrays</em> buffers with a specified logical size.
+     * This allows creating arrays with padded physical capacity but smaller logical size for bounds checking.
+     *
+     * @param realParts the real parts array
+     * @param imaginaryParts the imaginary parts array
+     * @param logicalSize the logical size for bounds checking (must be <= array length)
+     * @throws IllegalArgumentException when the arrays differ in length or logicalSize is invalid
+     */
+    public ComplexArray(double[] realParts, double[] imaginaryParts, int logicalSize) {
+        if (realParts.length != imaginaryParts.length) {
+            throw new IllegalArgumentException("Real and imaginary arrays must be the same length");
+        }
+        if (logicalSize < 0 || logicalSize > realParts.length) {
+            throw new IllegalArgumentException("Logical size must be between 0 and array length: " + logicalSize);
+        }
+        this.realParts = realParts;
+        this.imaginaryParts = imaginaryParts;
+        this.logicalSize = logicalSize;
     }
 
     public int size() {
+        return logicalSize;
+    }
+
+    /** Returns the physical capacity of the internal arrays (may be larger than logical size for alignment). */
+    public int capacity() {
         return realParts.length;
     }
 
@@ -225,17 +254,18 @@ public final class ComplexArray {
     public ComplexArray copy() {
         return new ComplexArray(
                 Arrays.copyOf(realParts, realParts.length),
-                Arrays.copyOf(imaginaryParts, imaginaryParts.length));
+                Arrays.copyOf(imaginaryParts, imaginaryParts.length),
+                logicalSize);
     }
 
     /** Returns the number of elements in this array. */
     public int length() {
-        return realParts.length;
+        return logicalSize;
     }
 
-    /** Returns {@code true} if the array length aligns with the preferred species length. */
+    /** Returns {@code true} if the array capacity aligns with the preferred species length. */
     public boolean isAligned() {
-        return size() % PREFERRED.length() == 0;
+        return capacity() % PREFERRED.length() == 0;
     }
 
     /**
@@ -269,16 +299,12 @@ public final class ComplexArray {
             return new ComplexArray(logicalSize);
         }
 
-        // Create padded arrays and copy logical size
+        // Create padded arrays with logical size
         double[] realParts = new double[paddedSize];
         double[] imaginaryParts = new double[paddedSize];
 
-        // Create array with padded buffers but trim to logical size
-        ComplexArray paddedArray = new ComplexArray(realParts, imaginaryParts);
-
-        // Return a properly sized array by copying only the logical portion
-        ComplexArray result = new ComplexArray(logicalSize);
-        return result;
+        // Return array with padded buffers but logical size for bounds checking
+        return new ComplexArray(realParts, imaginaryParts, logicalSize);
     }
 
     /**

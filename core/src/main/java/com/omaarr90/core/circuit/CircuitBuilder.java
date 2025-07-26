@@ -34,7 +34,7 @@ import java.util.function.Consumer;
  */
 public final class CircuitBuilder {
 
-    private final int qubitCount;
+    private int qubitCount;
     private final List<GateOp> operations;
     private final Map<Integer, Integer> measurementMap;
     private final Instant createdAt;
@@ -61,6 +61,24 @@ public final class CircuitBuilder {
      */
     public static CircuitBuilder of(int numQubits) {
         return new CircuitBuilder(numQubits);
+    }
+
+    /**
+     * Reserves space for the specified total number of qubits, expanding the circuit capacity
+     * if necessary without losing existing operations.
+     *
+     * @param totalQubits the total number of qubits to reserve
+     * @throws IllegalArgumentException if totalQubits is negative or less than current count
+     */
+    public void reserve(int totalQubits) {
+        if (totalQubits < 0) {
+            throw new IllegalArgumentException("Total qubits cannot be negative: " + totalQubits);
+        }
+        if (totalQubits < qubitCount) {
+            throw new IllegalArgumentException(
+                    "Cannot reduce qubit count from " + qubitCount + " to " + totalQubits);
+        }
+        this.qubitCount = totalQubits;
     }
 
     // ========== Validation Helpers ==========

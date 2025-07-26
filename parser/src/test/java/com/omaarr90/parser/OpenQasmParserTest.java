@@ -400,4 +400,125 @@ class OpenQasmParserTest {
         assertEquals(GateType.RZ, rzGate.type());
         assertEquals(2 * Math.PI / 3, rzGate.params()[0], 1e-10);
     }
+
+    @Test
+    void testParseInterleavedDeclarationsAndGates() throws ParseException {
+        String qasmSource =
+                """
+                OPENQASM 3.0;
+                qreg q1[1];
+                h q1[0];
+                qreg q2[1];
+                cx q1[0], q2[0];
+                qreg q3[1];
+                cx q2[0], q3[0];
+                """;
+
+        Circuit circuit = OpenQasmParser.parse(qasmSource);
+
+        // Verify circuit structure - should have 3 qubits total and 3 operations
+        assertEquals(3, circuit.qubitCount(), "Circuit should have 3 qubits total");
+        assertEquals(3, circuit.operationCount(), "Circuit should have 3 operations");
+
+        var ops = circuit.ops();
+
+        // First operation: H gate on qubit 0
+        assertTrue(ops.get(0) instanceof GateOp.Gate);
+        GateOp.Gate hGate = (GateOp.Gate) ops.get(0);
+        assertEquals(GateType.H, hGate.type());
+        assertArrayEquals(new int[] {0}, hGate.qubits());
+
+        // Second operation: CX gate on qubits 0,1
+        assertTrue(ops.get(1) instanceof GateOp.Gate);
+        GateOp.Gate cx1Gate = (GateOp.Gate) ops.get(1);
+        assertEquals(GateType.CX, cx1Gate.type());
+        assertArrayEquals(new int[] {0, 1}, cx1Gate.qubits());
+
+        // Third operation: CX gate on qubits 1,2
+        assertTrue(ops.get(2) instanceof GateOp.Gate);
+        GateOp.Gate cx2Gate = (GateOp.Gate) ops.get(2);
+        assertEquals(GateType.CX, cx2Gate.type());
+        assertArrayEquals(new int[] {1, 2}, cx2Gate.qubits());
+    }
+
+    @Test
+    void testParseGatesBeforeDeclarations() throws ParseException {
+        String qasmSource =
+                """
+                OPENQASM 3.0;
+                h q[0];
+                x q[1];
+                qreg q[2];
+                cx q[0], q[1];
+                """;
+
+        Circuit circuit = OpenQasmParser.parse(qasmSource);
+
+        // Verify circuit structure - should have 2 qubits and 3 operations
+        assertEquals(2, circuit.qubitCount(), "Circuit should have 2 qubits");
+        assertEquals(3, circuit.operationCount(), "Circuit should have 3 operations");
+
+        var ops = circuit.ops();
+
+        // First operation: H gate on qubit 0 (implicitly allocated)
+        assertTrue(ops.get(0) instanceof GateOp.Gate);
+        GateOp.Gate hGate = (GateOp.Gate) ops.get(0);
+        assertEquals(GateType.H, hGate.type());
+        assertArrayEquals(new int[] {0}, hGate.qubits());
+
+        // Second operation: X gate on qubit 1 (implicitly allocated)
+        assertTrue(ops.get(1) instanceof GateOp.Gate);
+        GateOp.Gate xGate = (GateOp.Gate) ops.get(1);
+        assertEquals(GateType.X, xGate.type());
+        assertArrayEquals(new int[] {1}, xGate.qubits());
+
+        // Third operation: CX gate on qubits 0,1
+        assertTrue(ops.get(2) instanceof GateOp.Gate);
+        GateOp.Gate cxGate = (GateOp.Gate) ops.get(2);
+        assertEquals(GateType.CX, cxGate.type());
+        assertArrayEquals(new int[] {0, 1}, cxGate.qubits());
+    }
+
+    @Test
+    void testParseComplexInterleavedPattern() throws ParseException {
+        String qasmSource =
+                """
+                OPENQASM 3.0;
+                h q[0];
+                qreg q[1];
+                x q[0];
+                cx q[0], q[1];
+                qreg r[1];
+                cz q[1], r[0];
+                barrier;
+                """;
+
+        Circuit circuit = OpenQasmParser.parse(qasmSource);
+
+        // Verify circuit structure - should have 3 qubits and 5 operations
+        assertEquals(3, circuit.qubitCount(), "Circuit should have 3 qubits");
+        assertEquals(5, circuit.operationCount(), "Circuit should have 5 operations");
+
+        var ops = circuit.ops();
+
+        // Verify all operations are preserved in correct order
+        // H gate on qubit 0
+        assertTrue(ops.get(0) instanceof GateOp.Gate);
+        assertEquals(GateType.H, ((GateOp.Gate) ops.get(0)).type());
+
+        // X gate on qubit 0
+        assertTrue(ops.get(1) instanceof GateOp.Gate);
+        assertEquals(GateType.X, ((GateOp.Gate) ops.get(1)).type());
+
+        // CX gate on qubits 0,1
+        assertTrue(ops.get(2) instanceof GateOp.Gate);
+        assertEquals(GateType.CX, ((GateOp.Gate) ops.get(2)).type());
+
+        // CZ gate on qubits 1,2
+        assertTrue(ops.get(3) instanceof GateOp.Gate);
+        assertEquals(GateType.CZ, ((GateOp.Gate) ops.get(3)).type());
+
+        // Barrier
+        assertTrue(ops.get(4) instanceof GateOp.Barrier);
+    }
 }

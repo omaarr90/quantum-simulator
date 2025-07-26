@@ -4,8 +4,13 @@ import com.omaarr90.core.circuit.Circuit;
 import com.omaarr90.core.circuit.CircuitBuilder;
 import com.omaarr90.parser.OpenQasmParser;
 import com.omaarr90.parser.ParseException;
+import com.omaarr90.parser.qasm.OpenQasm3Lexer;
+import com.omaarr90.parser.qasm.OpenQasm3Parser;
+import org.antlr.v4.runtime.*;
+import org.antlr.v4.runtime.tree.ParseTree;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -24,7 +29,15 @@ public class Main {
                 printUsage();
                 System.exit(1);
             }
-            runQasmFile(args[2]);
+            boolean debugParse = args.length > 3 && "--debug-parse".equals(args[3]);
+            runQasmFile(args[2], debugParse);
+        } else if (args.length >= 2 && "--debug-parse".equals(args[0]) && "-f".equals(args[1])) {
+            if (args.length < 3) {
+                System.err.println("Error: Missing file path after -f flag");
+                printUsage();
+                System.exit(1);
+            }
+            runQasmFile(args[2], true);
         } else if (args.length == 1 && ("--help".equals(args[0]) || "-h".equals(args[0]))) {
             printUsage();
         } else {
@@ -48,10 +61,15 @@ public class Main {
         displayCircuitInfo(circuit);
     }
     
-    private static void runQasmFile(String filePath) {
+    private static void runQasmFile(String filePath, boolean debugParse) {
         try {
             Path qasmFile = Paths.get(filePath);
             System.out.println("Parsing OpenQASM file: " + qasmFile.toAbsolutePath());
+            
+            if (debugParse) {
+                printParseTree(qasmFile);
+                System.out.println();
+            }
             
             Circuit circuit = OpenQasmParser.parse(qasmFile);
             
@@ -69,6 +87,30 @@ public class Main {
             e.printStackTrace();
             System.exit(1);
         }
+    }
+    
+    private static void printParseTree(Path qasmFile) throws IOException {
+        String source = Files.readString(qasmFile);
+        
+        // Create input stream from source
+        CharStream input = CharStreams.fromString(source);
+        
+        // Create lexer
+        OpenQasm3Lexer lexer = new OpenQasm3Lexer(input);
+        
+        // Create token stream
+        CommonTokenStream tokens = new CommonTokenStream(lexer);
+        
+        // Create parser
+        OpenQasm3Parser parser = new OpenQasm3Parser(tokens);
+        
+        // Parse the program
+        ParseTree tree = parser.program();
+        
+        // Print the parse tree
+        System.out.println("Parse Tree:");
+        System.out.println("===========");
+        System.out.println(tree.toStringTree(parser));
     }
     
     private static void displayCircuitInfo(Circuit circuit) {
@@ -102,20 +144,26 @@ public class Main {
         System.out.println("====================");
         System.out.println();
         System.out.println("Usage:");
-        System.out.println("  qsim                    Run default demo circuit");
-        System.out.println("  qsim run -f <file>      Run OpenQASM file");
-        System.out.println("  qsim --help, -h         Show this help message");
+        System.out.println("  qsim                           Run default demo circuit");
+        System.out.println("  qsim run -f <file>             Run OpenQASM file");
+        System.out.println("  qsim run -f <file> --debug-parse   Run OpenQASM file with parse tree output");
+        System.out.println("  qsim --debug-parse -f <file>   Run OpenQASM file with parse tree output");
+        System.out.println("  qsim --help, -h                Show this help message");
         System.out.println();
         System.out.println("Examples:");
-        System.out.println("  qsim run -f bell.qasm   Parse and display Bell state circuit");
-        System.out.println("  qsim run -f ghz.qasm    Parse and display GHZ state circuit");
+        System.out.println("  qsim run -f bell.qasm          Parse and display Bell state circuit");
+        System.out.println("  qsim run -f ghz.qasm           Parse and display GHZ state circuit");
+        System.out.println("  qsim --debug-parse -f bell.qasm   Show parse tree for Bell circuit");
         System.out.println();
         System.out.println("Supported OpenQASM 3 features:");
-        System.out.println("  - Qubit declarations: qubit[N] q;");
-        System.out.println("  - Single-qubit gates: h, x, y, z");
-        System.out.println("  - Two-qubit gates: cx, cz, swap");
+        System.out.println("  - Qubit declarations: qreg q[N]; or qubit[N] q;");
+        System.out.println("  - Classical declarations: creg c[N];");
+        System.out.println("  - Single-qubit gates: h, x, y, z, s, sdg, t, tdg");
+        System.out.println("  - Two-qubit gates: cx/cnot, cz, swap");
         System.out.println("  - Parametrized rotations: rx(θ), ry(θ), rz(θ)");
+        System.out.println("  - Arithmetic expressions: π, π/2, π/4, etc.");
+        System.out.println("  - Multiple statements per line: h q[0]; cx q[0], q[1];");
         System.out.println("  - Measurements: measure q[i] -> c[i];");
-        System.out.println("  - Barriers: barrier;");
+        System.out.println("  - Barriers: barrier; or barrier q[0], q[1];");
     }
 }

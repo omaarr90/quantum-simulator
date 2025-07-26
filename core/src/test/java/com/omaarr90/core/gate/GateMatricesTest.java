@@ -240,7 +240,9 @@ class GateMatricesTest {
         assertFalse(GateType.Y.isParameterized(), "Y should not be parameterized");
         assertFalse(GateType.Z.isParameterized(), "Z should not be parameterized");
         assertFalse(GateType.S.isParameterized(), "S should not be parameterized");
+        assertFalse(GateType.SDG.isParameterized(), "SDG should not be parameterized");
         assertFalse(GateType.T.isParameterized(), "T should not be parameterized");
+        assertFalse(GateType.TDG.isParameterized(), "TDG should not be parameterized");
         assertFalse(GateType.CX.isParameterized(), "CX should not be parameterized");
         assertFalse(GateType.CZ.isParameterized(), "CZ should not be parameterized");
         assertFalse(GateType.SWAP.isParameterized(), "SWAP should not be parameterized");
@@ -347,6 +349,95 @@ class GateMatricesTest {
         Complex[][] tConjugateTranspose = conjugateTranspose(tMatrix);
         Complex[][] tProduct = multiply(tConjugateTranspose, tMatrix);
         assertIsIdentity(tProduct, "T");
+    }
+    
+    @Test
+    @DisplayName("SDG and TDG gate properties")
+    void testSDGAndTDGGateProperties() {
+        Complex[][] sMatrix = new FixedGate(GateType.S).matrix();
+        Complex[][] sdgMatrix = new FixedGate(GateType.SDG).matrix();
+        Complex[][] tMatrix = new FixedGate(GateType.T).matrix();
+        Complex[][] tdgMatrix = new FixedGate(GateType.TDG).matrix();
+        Complex[][] identityMatrix = {{Complex.ONE, Complex.ZERO}, {Complex.ZERO, Complex.ONE}};
+        
+        // Test SDG is conjugate transpose of S
+        Complex[][] sConjugateTranspose = conjugateTranspose(sMatrix);
+        assertMatricesEqual(sConjugateTranspose, sdgMatrix, "SDG should equal S†");
+        
+        // Test TDG is conjugate transpose of T
+        Complex[][] tConjugateTranspose = conjugateTranspose(tMatrix);
+        assertMatricesEqual(tConjugateTranspose, tdgMatrix, "TDG should equal T†");
+        
+        // Test S·SDG = I (S and SDG are inverses)
+        Complex[][] sSDGProduct = multiply(sMatrix, sdgMatrix);
+        assertMatricesEqual(identityMatrix, sSDGProduct, "S·SDG should equal I");
+        
+        // Test SDG·S = I
+        Complex[][] sdgSProduct = multiply(sdgMatrix, sMatrix);
+        assertMatricesEqual(identityMatrix, sdgSProduct, "SDG·S should equal I");
+        
+        // Test T·TDG = I (T and TDG are inverses)
+        Complex[][] tTDGProduct = multiply(tMatrix, tdgMatrix);
+        assertMatricesEqual(identityMatrix, tTDGProduct, "T·TDG should equal I");
+        
+        // Test TDG·T = I
+        Complex[][] tdgTProduct = multiply(tdgMatrix, tMatrix);
+        assertMatricesEqual(identityMatrix, tdgTProduct, "TDG·T should equal I");
+        
+        // Test SDG and TDG are unitary
+        Complex[][] sdgConjugateTranspose = conjugateTranspose(sdgMatrix);
+        Complex[][] sdgProduct = multiply(sdgConjugateTranspose, sdgMatrix);
+        assertIsIdentity(sdgProduct, "SDG");
+        
+        Complex[][] tdgConjugateTranspose = conjugateTranspose(tdgMatrix);
+        Complex[][] tdgProduct = multiply(tdgConjugateTranspose, tdgMatrix);
+        assertIsIdentity(tdgProduct, "TDG");
+    }
+    
+    @Test
+    @DisplayName("GateType.toGate() methods")
+    void testToGateMethods() {
+        // Test fixed gates - toGate() without parameters
+        Gate hGate = GateType.H.toGate();
+        assertTrue(hGate instanceof FixedGate, "H.toGate() should return FixedGate");
+        assertEquals(GateType.H, ((FixedGate) hGate).type(), "FixedGate should have correct type");
+        
+        Gate sdgGate = GateType.SDG.toGate();
+        assertTrue(sdgGate instanceof FixedGate, "SDG.toGate() should return FixedGate");
+        assertEquals(GateType.SDG, ((FixedGate) sdgGate).type(), "SDG FixedGate should have correct type");
+        
+        Gate tdgGate = GateType.TDG.toGate();
+        assertTrue(tdgGate instanceof FixedGate, "TDG.toGate() should return FixedGate");
+        assertEquals(GateType.TDG, ((FixedGate) tdgGate).type(), "TDG FixedGate should have correct type");
+        
+        // Test parameterized gates - toGate() without parameters should throw
+        assertThrows(IllegalArgumentException.class, () -> GateType.RX.toGate(),
+            "RX.toGate() without theta should throw IllegalArgumentException");
+        assertThrows(IllegalArgumentException.class, () -> GateType.RY.toGate(),
+            "RY.toGate() without theta should throw IllegalArgumentException");
+        assertThrows(IllegalArgumentException.class, () -> GateType.RZ.toGate(),
+            "RZ.toGate() without theta should throw IllegalArgumentException");
+        
+        // Test parameterized gates - toGate(theta) should work
+        double theta = Math.PI / 4;
+        Gate rxGate = GateType.RX.toGate(theta);
+        assertTrue(rxGate instanceof ParameterizedGate, "RX.toGate(theta) should return ParameterizedGate");
+        assertEquals(GateType.RX, ((ParameterizedGate) rxGate).type(), "ParameterizedGate should have correct type");
+        assertEquals(theta, ((ParameterizedGate) rxGate).theta(), 1e-10, "ParameterizedGate should have correct theta");
+        
+        // Test fixed gates - toGate(theta) should ignore theta and return FixedGate
+        Gate hGateWithTheta = GateType.H.toGate(theta);
+        assertTrue(hGateWithTheta instanceof FixedGate, "H.toGate(theta) should return FixedGate");
+        assertEquals(GateType.H, ((FixedGate) hGateWithTheta).type(), "FixedGate should have correct type");
+        
+        // Test matrix consistency - gates created via toGate() should have same matrices as direct construction
+        Complex[][] directSMatrix = new FixedGate(GateType.S).matrix();
+        Complex[][] toGateSMatrix = GateType.S.toGate().matrix();
+        assertMatricesEqual(directSMatrix, toGateSMatrix, "S gate matrices should be identical");
+        
+        Complex[][] directRXMatrix = new ParameterizedGate(GateType.RX, theta).matrix();
+        Complex[][] toGateRXMatrix = GateType.RX.toGate(theta).matrix();
+        assertMatricesEqual(directRXMatrix, toGateRXMatrix, "RX gate matrices should be identical");
     }
     
     

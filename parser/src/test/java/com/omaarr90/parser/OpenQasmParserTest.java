@@ -174,4 +174,192 @@ class OpenQasmParserTest {
             OpenQasmParser.parse(nonExistentFile);
         }, "Parsing non-existent file should throw IOException");
     }
+    
+    @Test
+    void testParseMultipleRegisters() throws ParseException {
+        String qasmSource = """
+            OPENQASM 3.0;
+            qreg q1[2];
+            qreg q2[1];
+            creg c1[2];
+            creg c2[1];
+            h q1[0];
+            cx q1[0], q1[1];
+            x q2[0];
+            measure q1[0] -> c1[0];
+            measure q1[1] -> c1[1];
+            measure q2[0] -> c2[0];
+            """;
+        
+        Circuit circuit = OpenQasmParser.parse(qasmSource);
+        
+        assertEquals(3, circuit.qubitCount(), "Should have 3 qubits total (2+1)");
+        assertEquals(3, circuit.operationCount(), "Should have 3 operations (H + CX + X)");
+        assertEquals(3, circuit.measurementCount(), "Should have 3 measurements");
+        
+        // Verify operations
+        var ops = circuit.ops();
+        
+        // H gate on qubit 0 (q1[0])
+        assertTrue(ops.get(0) instanceof GateOp.Gate);
+        GateOp.Gate hGate = (GateOp.Gate) ops.get(0);
+        assertEquals(GateType.H, hGate.type());
+        assertArrayEquals(new int[]{0}, hGate.qubits());
+        
+        // CX gate on qubits 0,1 (q1[0], q1[1])
+        assertTrue(ops.get(1) instanceof GateOp.Gate);
+        GateOp.Gate cxGate = (GateOp.Gate) ops.get(1);
+        assertEquals(GateType.CX, cxGate.type());
+        assertArrayEquals(new int[]{0, 1}, cxGate.qubits());
+        
+        // X gate on qubit 2 (q2[0])
+        assertTrue(ops.get(2) instanceof GateOp.Gate);
+        GateOp.Gate xGate = (GateOp.Gate) ops.get(2);
+        assertEquals(GateType.X, xGate.type());
+        assertArrayEquals(new int[]{2}, xGate.qubits());
+    }
+    
+    @Test
+    void testParseGateAliases() throws ParseException {
+        String qasmSource = """
+            OPENQASM 3.0;
+            qreg q[2];
+            cx q[0], q[1];
+            cnot q[1], q[0];
+            """;
+        
+        Circuit circuit = OpenQasmParser.parse(qasmSource);
+        
+        assertEquals(2, circuit.qubitCount());
+        assertEquals(2, circuit.operationCount());
+        
+        var ops = circuit.ops();
+        
+        // Both should be CX gates
+        assertTrue(ops.get(0) instanceof GateOp.Gate);
+        GateOp.Gate cx1Gate = (GateOp.Gate) ops.get(0);
+        assertEquals(GateType.CX, cx1Gate.type());
+        assertArrayEquals(new int[]{0, 1}, cx1Gate.qubits());
+        
+        assertTrue(ops.get(1) instanceof GateOp.Gate);
+        GateOp.Gate cx2Gate = (GateOp.Gate) ops.get(1);
+        assertEquals(GateType.CX, cx2Gate.type());
+        assertArrayEquals(new int[]{1, 0}, cx2Gate.qubits());
+    }
+    
+    @Test
+    void testParseMultipleStatementsPerLine() throws ParseException {
+        String qasmSource = """
+            OPENQASM 3.0;
+            qreg q[2]; creg c[2];
+            h q[0]; cx q[0], q[1]; measure q[0] -> c[0]; measure q[1] -> c[1];
+            """;
+        
+        Circuit circuit = OpenQasmParser.parse(qasmSource);
+        
+        assertEquals(2, circuit.qubitCount());
+        assertEquals(2, circuit.operationCount());
+        assertEquals(2, circuit.measurementCount());
+        
+        var ops = circuit.ops();
+        
+        // H gate
+        assertTrue(ops.get(0) instanceof GateOp.Gate);
+        GateOp.Gate hGate = (GateOp.Gate) ops.get(0);
+        assertEquals(GateType.H, hGate.type());
+        
+        // CX gate
+        assertTrue(ops.get(1) instanceof GateOp.Gate);
+        GateOp.Gate cxGate = (GateOp.Gate) ops.get(1);
+        assertEquals(GateType.CX, cxGate.type());
+    }
+    
+    @Test
+    void testParseExceptionWithLineColumn() {
+        String invalidQasm = """
+            OPENQASM 3.0;
+            qreg q[2];
+            invalid_gate q[0];
+            """;
+        
+        ParseException exception = assertThrows(ParseException.class, () -> {
+            OpenQasmParser.parse(invalidQasm);
+        }, "Should throw ParseException for invalid gate");
+        
+        assertTrue(exception.getLine() > 0, "Should have valid line number");
+        assertTrue(exception.getColumn() >= 0, "Should have valid column number");
+        assertNotNull(exception.getMessage(), "Should have error message");
+        assertTrue(exception.getMessage().contains("Line"), "Error message should contain line info");
+    }
+    
+    @Test
+    void testParseExceptionForUndefinedQubit() {
+        String invalidQasm = """
+            OPENQASM 3.0;
+            qreg q[2];
+            h undefined[0];
+            """;
+        
+        ParseException exception = assertThrows(ParseException.class, () -> {
+            OpenQasmParser.parse(invalidQasm);
+        }, "Should throw ParseException for undefined qubit");
+        
+        assertTrue(exception.getMessage().contains("Undefined qubit"), "Should mention undefined qubit");
+        assertTrue(exception.getLine() > 0, "Should have valid line number");
+        assertNotNull(exception.getSuggestion(), "Should have helpful suggestion");
+    }
+    
+    @Test
+    void testParseExceptionForDuplicateRegister() {
+        String invalidQasm = """
+            OPENQASM 3.0;
+            qreg q[2];
+            qreg q[1];
+            """;
+        
+        ParseException exception = assertThrows(ParseException.class, () -> {
+            OpenQasmParser.parse(invalidQasm);
+        }, "Should throw ParseException for duplicate register");
+        
+        assertTrue(exception.getMessage().contains("already declared"), "Should mention duplicate declaration");
+        assertEquals(3, exception.getLine(), "Should point to line 3");
+        assertNotNull(exception.getSuggestion(), "Should have helpful suggestion");
+        assertTrue(exception.getSuggestion().contains("different register name"), "Should suggest using different name");
+    }
+    
+    @Test
+    void testParseArithmeticExpressions() throws ParseException {
+        String qasmSource = """
+            OPENQASM 3.0;
+            qreg q[1];
+            rx(π/2) q[0];
+            ry(π/4) q[0];
+            rz(2*π/3) q[0];
+            """;
+        
+        Circuit circuit = OpenQasmParser.parse(qasmSource);
+        
+        assertEquals(1, circuit.qubitCount());
+        assertEquals(3, circuit.operationCount());
+        
+        var ops = circuit.ops();
+        
+        // RX(π/2)
+        assertTrue(ops.get(0) instanceof GateOp.Gate);
+        GateOp.Gate rxGate = (GateOp.Gate) ops.get(0);
+        assertEquals(GateType.RX, rxGate.type());
+        assertEquals(Math.PI / 2, rxGate.params()[0], 1e-10);
+        
+        // RY(π/4)
+        assertTrue(ops.get(1) instanceof GateOp.Gate);
+        GateOp.Gate ryGate = (GateOp.Gate) ops.get(1);
+        assertEquals(GateType.RY, ryGate.type());
+        assertEquals(Math.PI / 4, ryGate.params()[0], 1e-10);
+        
+        // RZ(2*π/3)
+        assertTrue(ops.get(2) instanceof GateOp.Gate);
+        GateOp.Gate rzGate = (GateOp.Gate) ops.get(2);
+        assertEquals(GateType.RZ, rzGate.type());
+        assertEquals(2 * Math.PI / 3, rzGate.params()[0], 1e-10);
+    }
 }

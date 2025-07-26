@@ -1,7 +1,8 @@
 OPENQASM 3.0;
 
 // Bell state circuit
-qubit[2] q;
+qreg q[2];
+creg c[2];
 
 // Create Bell state |00⟩ + |11⟩
 h q[0];

@@ -29,6 +29,18 @@ public class OpenQasm3BaseListener implements OpenQasm3Listener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterStatementLine(OpenQasm3Parser.StatementLineContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitStatementLine(OpenQasm3Parser.StatementLineContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterVersion(OpenQasm3Parser.VersionContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -65,6 +77,18 @@ public class OpenQasm3BaseListener implements OpenQasm3Listener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterClassicalDeclaration(OpenQasm3Parser.ClassicalDeclarationContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitClassicalDeclaration(OpenQasm3Parser.ClassicalDeclarationContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterGateApplication(OpenQasm3Parser.GateApplicationContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -84,6 +108,18 @@ public class OpenQasm3BaseListener implements OpenQasm3Listener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitGateCall(OpenQasm3Parser.GateCallContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterGateName(OpenQasm3Parser.GateNameContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitGateName(OpenQasm3Parser.GateNameContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

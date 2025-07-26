@@ -41,9 +41,19 @@ public record FixedGate(GateType type) implements Gate {
         {ZERO, I}
     };
     
+    private static final Complex[][] SDG_MATRIX = {
+        {ONE, ZERO},
+        {ZERO, MINUS_I}
+    };
+    
     private static final Complex[][] T_MATRIX = {
         {ONE, ZERO},
         {ZERO, ONE.scale(Math.cos(Math.PI / 4.0)).add(I.scale(Math.sin(Math.PI / 4.0)))}
+    };
+    
+    private static final Complex[][] TDG_MATRIX = {
+        {ONE, ZERO},
+        {ZERO, ONE.scale(Math.cos(Math.PI / 4.0)).add(I.scale(-Math.sin(Math.PI / 4.0)))}
     };
     
     // Two-qubit gates
@@ -83,7 +93,9 @@ public record FixedGate(GateType type) implements Gate {
             case Y -> Y_MATRIX;
             case Z -> Z_MATRIX;
             case S -> S_MATRIX;
+            case SDG -> SDG_MATRIX;
             case T -> T_MATRIX;
+            case TDG -> TDG_MATRIX;
             case CX -> CX_MATRIX;
             case CZ -> CZ_MATRIX;
             case SWAP -> SWAP_MATRIX;

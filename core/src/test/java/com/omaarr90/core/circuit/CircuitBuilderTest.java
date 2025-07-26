@@ -146,21 +146,29 @@ class CircuitBuilderTest {
                     .x(0)
                     .y(0)
                     .z(0)
+                    .s(0)
+                    .sdg(0)
+                    .t(0)
+                    .tdg(0)
                     .rx(0, Math.PI)
                     .ry(0, Math.PI / 2)
                     .rz(0, Math.PI / 4)
                     .build();
             
-            assertEquals(7, circuit.operationCount());
+            assertEquals(11, circuit.operationCount());
             
             var ops = circuit.ops();
             assertEquals(GateType.H, ((GateOp.Gate) ops.get(0)).type());
             assertEquals(GateType.X, ((GateOp.Gate) ops.get(1)).type());
             assertEquals(GateType.Y, ((GateOp.Gate) ops.get(2)).type());
             assertEquals(GateType.Z, ((GateOp.Gate) ops.get(3)).type());
-            assertEquals(GateType.RX, ((GateOp.Gate) ops.get(4)).type());
-            assertEquals(GateType.RY, ((GateOp.Gate) ops.get(5)).type());
-            assertEquals(GateType.RZ, ((GateOp.Gate) ops.get(6)).type());
+            assertEquals(GateType.S, ((GateOp.Gate) ops.get(4)).type());
+            assertEquals(GateType.SDG, ((GateOp.Gate) ops.get(5)).type());
+            assertEquals(GateType.T, ((GateOp.Gate) ops.get(6)).type());
+            assertEquals(GateType.TDG, ((GateOp.Gate) ops.get(7)).type());
+            assertEquals(GateType.RX, ((GateOp.Gate) ops.get(8)).type());
+            assertEquals(GateType.RY, ((GateOp.Gate) ops.get(9)).type());
+            assertEquals(GateType.RZ, ((GateOp.Gate) ops.get(10)).type());
         }
         
         @Test
@@ -406,6 +414,56 @@ class CircuitBuilderTest {
         void negativeQubitCountThrowsException() {
             var exception = assertThrows(IllegalArgumentException.class, () -> CircuitBuilder.of(-1));
             assertTrue(exception.getMessage().contains("cannot be negative"));
+        }
+        
+        @Test
+        @DisplayName("Builder reset() clears state for reuse")
+        void builderResetClearsState() {
+            var builder = CircuitBuilder.of(3)
+                    .h(0)
+                    .s(1)
+                    .cx(0, 1)
+                    .measure(0, 0)
+                    .measure(1, 2);
+            
+            // Verify initial state
+            assertEquals(3, builder.operationCount());
+            assertEquals(2, builder.measurementCount());
+            
+            // Build first circuit
+            var circuit1 = builder.build();
+            assertEquals(3, circuit1.operationCount());
+            assertEquals(2, circuit1.measurementCount());
+            assertEquals(3, circuit1.classicalBits());
+            
+            // Reset and verify state is cleared
+            builder.reset();
+            assertEquals(0, builder.operationCount());
+            assertEquals(0, builder.measurementCount());
+            
+            // Build second circuit with different operations
+            var circuit2 = builder
+                    .x(2)
+                    .tdg(1)
+                    .measure(2, 0)
+                    .build();
+            
+            // Verify second circuit is independent
+            assertEquals(2, circuit2.operationCount());
+            assertEquals(1, circuit2.measurementCount());
+            assertEquals(1, circuit2.classicalBits());
+            assertEquals(3, circuit2.qubitCount()); // Qubit count preserved
+            
+            // Verify first circuit is unchanged
+            assertEquals(3, circuit1.operationCount());
+            assertEquals(2, circuit1.measurementCount());
+            
+            // Verify operations are different
+            var ops1 = circuit1.ops();
+            var ops2 = circuit2.ops();
+            assertEquals(GateType.H, ((GateOp.Gate) ops1.get(0)).type());
+            assertEquals(GateType.X, ((GateOp.Gate) ops2.get(0)).type());
+            assertEquals(GateType.TDG, ((GateOp.Gate) ops2.get(1)).type());
         }
     }
 

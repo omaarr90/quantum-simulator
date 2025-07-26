@@ -7,6 +7,12 @@ package com.omaarr90.core.math;
  * and i is the imaginary unit (i² = -1).
  * </p>
  * <p>
+ * <strong>IMMUTABILITY GUARANTEE:</strong> This class is completely immutable.
+ * Every arithmetic operation ({@link #add}, {@link #sub}, {@link #mul}, {@link #div}, 
+ * {@link #scale}, {@link #conjugate}) returns a <strong>new</strong> {@link Complex} 
+ * instance, leaving the original unchanged. No method modifies the state of existing instances.
+ * </p>
+ * <p>
  * Designed for intrinsic friendliness: only primitive {@code double} fields,
  * no boxing, and a tiny record that the JIT can scalar‑replace. All
  * operations return new {@link Complex} instances so callers can fluently
@@ -25,10 +31,22 @@ public record Complex(double real, double imaginary) {
     public static final Complex ONE  = new Complex(1.0, 0.0);
     /** Imaginary unit (0 + 1i). */
     public static final Complex I    = new Complex(0.0, 1.0);
+    /** Negative imaginary unit (0 - 1i). */
+    public static final Complex NEG_I = new Complex(0.0, -1.0);
 
     /** Factory from polar coordinates. */
     public static Complex fromPolar(double r, double theta) {
         return new Complex(r * Math.cos(theta), r * Math.sin(theta));
+    }
+
+    /** 
+     * Creates a complex number from Euler's formula: e^(iθ) = cos(θ) + i*sin(θ).
+     * 
+     * @param theta the angle in radians
+     * @return e^(iθ) = cos(θ) + i*sin(θ)
+     */
+    public static Complex exp(double theta) {
+        return new Complex(Math.cos(theta), Math.sin(theta));
     }
 
     /*---------------------------------------------------------------------
@@ -129,7 +147,15 @@ public record Complex(double real, double imaginary) {
         return Math.hypot(real, imaginary);
     }
 
-
+    /**
+     * Argument (phase angle) of the complex number.
+     * Returns the angle θ in polar representation z = r*e^(iθ).
+     *
+     * @return arg(z) = atan2(imaginary, real) in radians, range [-π, π]
+     */
+    public double arg() {
+        return Math.atan2(imaginary, real);
+    }
 
     /**
      * Converts to polar representation.

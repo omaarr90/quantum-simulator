@@ -2,7 +2,11 @@ grammar OpenQasm3;
 
 // Parser rules
 program
-    : version? (statement)* EOF
+    : version? (statementLine)* EOF
+    ;
+
+statementLine
+    : statement (';' statement)* ';'?
     ;
 
 version
@@ -11,6 +15,7 @@ version
 
 statement
     : qubitDeclaration
+    | classicalDeclaration
     | gateApplication
     | measureStatement
     | barrier
@@ -18,6 +23,11 @@ statement
 
 qubitDeclaration
     : 'qubit' '[' INT ']' IDENTIFIER ';'
+    | 'qreg' IDENTIFIER '[' INT ']' ';'
+    ;
+
+classicalDeclaration
+    : 'creg' IDENTIFIER '[' INT ']' ';'
     ;
 
 gateApplication
@@ -25,8 +35,14 @@ gateApplication
     ;
 
 gateCall
-    : IDENTIFIER                           // Single qubit gates: x, y, z, h
-    | IDENTIFIER '(' expression ')'        // Parametrized gates: rz(π/2)
+    : gateName                             // Single qubit gates: x, y, z, h
+    | gateName '(' expression ')'          // Parametrized gates: rz(π/2)
+    ;
+
+gateName
+    : IDENTIFIER
+    | 'cx'      // Alias for cnot
+    | 'cnot'    // Alias for cx
     ;
 
 qubitArguments

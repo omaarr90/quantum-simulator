@@ -12,14 +12,16 @@ import java.util.function.Consumer;
 /**
  * Fluent builder for constructing quantum circuits.
  * 
- * This builder provides a type-safe, chainable API for assembling quantum circuits
+ * <p>This builder provides a type-safe, chainable API for assembling quantum circuits
  * programmatically. It mirrors common QASM syntax while remaining intrinsically
  * friendly and GraalVM native-image compatible.
  * 
- * The builder is thread-confined (not thread-safe), but the resulting Circuit
- * is immutable and thread-safe.
+ * <p><strong>Thread Safety:</strong> This builder is <strong>NOT thread-safe</strong>.
+ * Each builder instance should be used by only one thread at a time. However, the
+ * resulting {@link Circuit} objects are immutable and thread-safe. Use {@link #reset()}
+ * to clear the builder state for reuse within the same thread.
  * 
- * Example usage:
+ * <p>Example usage:
  * <pre>{@code
  * var circuit = CircuitBuilder.of(3)
  *         .h(0)
@@ -131,6 +133,54 @@ public final class CircuitBuilder {
     public CircuitBuilder z(int qubit) {
         checkQubit(qubit);
         operations.add(new GateOp.Gate(GateType.Z, qubit));
+        return this;
+    }
+    
+    /**
+     * Applies an S gate (quarter phase gate) to the specified qubit.
+     * 
+     * @param qubit the target qubit
+     * @return this builder for chaining
+     */
+    public CircuitBuilder s(int qubit) {
+        checkQubit(qubit);
+        operations.add(new GateOp.Gate(GateType.S, qubit));
+        return this;
+    }
+    
+    /**
+     * Applies an SDG gate (conjugate transpose of S gate) to the specified qubit.
+     * 
+     * @param qubit the target qubit
+     * @return this builder for chaining
+     */
+    public CircuitBuilder sdg(int qubit) {
+        checkQubit(qubit);
+        operations.add(new GateOp.Gate(GateType.SDG, qubit));
+        return this;
+    }
+    
+    /**
+     * Applies a T gate (eighth phase gate) to the specified qubit.
+     * 
+     * @param qubit the target qubit
+     * @return this builder for chaining
+     */
+    public CircuitBuilder t(int qubit) {
+        checkQubit(qubit);
+        operations.add(new GateOp.Gate(GateType.T, qubit));
+        return this;
+    }
+    
+    /**
+     * Applies a TDG gate (conjugate transpose of T gate) to the specified qubit.
+     * 
+     * @param qubit the target qubit
+     * @return this builder for chaining
+     */
+    public CircuitBuilder tdg(int qubit) {
+        checkQubit(qubit);
+        operations.add(new GateOp.Gate(GateType.TDG, qubit));
         return this;
     }
     
@@ -340,6 +390,22 @@ public final class CircuitBuilder {
         // In a real implementation, this would be handled by the simulator
         // based on the classical bit state during execution
         gatedOps.accept(this);
+        return this;
+    }
+    
+    // ========== Builder Management ==========
+    
+    /**
+     * Resets the builder to its initial state, clearing all operations and measurements
+     * while preserving the qubit count. This allows the builder to be reused for
+     * constructing multiple circuits.
+     * 
+     * @return this builder for chaining
+     */
+    public CircuitBuilder reset() {
+        operations.clear();
+        measurementMap.clear();
+        classicalBits = 0;
         return this;
     }
     

@@ -17,6 +17,12 @@ public interface OpenQasm3Visitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitProgram(OpenQasm3Parser.ProgramContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link OpenQasm3Parser#statementLine}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitStatementLine(OpenQasm3Parser.StatementLineContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link OpenQasm3Parser#version}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -35,6 +41,12 @@ public interface OpenQasm3Visitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitQubitDeclaration(OpenQasm3Parser.QubitDeclarationContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link OpenQasm3Parser#classicalDeclaration}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitClassicalDeclaration(OpenQasm3Parser.ClassicalDeclarationContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link OpenQasm3Parser#gateApplication}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -46,6 +58,12 @@ public interface OpenQasm3Visitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitGateCall(OpenQasm3Parser.GateCallContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link OpenQasm3Parser#gateName}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitGateName(OpenQasm3Parser.GateNameContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link OpenQasm3Parser#qubitArguments}.
 	 * @param ctx the parse tree

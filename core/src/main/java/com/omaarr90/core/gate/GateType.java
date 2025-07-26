@@ -30,9 +30,17 @@ import java.util.Set;
  * <pre>S = [[1, 0],
  *          [0, i]]</pre>
  * 
+ * <li><b>SDG (S-dagger)</b>: Conjugate transpose of S gate
+ * <pre>SDG = [[1,  0],
+ *            [0, -i]]</pre>
+ * 
  * <li><b>T (π/8)</b>: Eighth phase gate
  * <pre>T = [[1,           0],
  *          [0, e^(iπ/4)]]</pre>
+ * 
+ * <li><b>TDG (T-dagger)</b>: Conjugate transpose of T gate
+ * <pre>TDG = [[1,            0],
+ *            [0, e^(-iπ/4)]]</pre>
  * 
  * <li><b>CX (CNOT)</b>: Controlled-X gate
  * <pre>CX = [[1, 0, 0, 0],
@@ -79,8 +87,12 @@ public enum GateType {
     Z, 
     /** S gate - quarter phase gate (√Z) */
     S, 
+    /** SDG gate - conjugate transpose of S gate */
+    SDG, 
     /** T gate - eighth phase gate (√S) */
     T, 
+    /** TDG gate - conjugate transpose of T gate */
+    TDG,
     /** RX gate - parameterized rotation around X-axis */
     RX, 
     /** RY gate - parameterized rotation around Y-axis */
@@ -104,6 +116,36 @@ public enum GateType {
      */
     public boolean isParameterized() {
         return PARAMETERIZED_GATES.contains(this);
+    }
+    
+    /**
+     * Creates a Gate instance for this gate type.
+     * For fixed gates, returns a FixedGate instance.
+     * For parameterized gates, throws IllegalArgumentException as theta parameter is required.
+     * 
+     * @return Gate instance for fixed gates
+     * @throws IllegalArgumentException if this is a parameterized gate type
+     */
+    public Gate toGate() {
+        if (isParameterized()) {
+            throw new IllegalArgumentException("Parameterized gate " + this + " requires theta parameter. Use toGate(double theta) instead.");
+        }
+        return new FixedGate(this);
+    }
+    
+    /**
+     * Creates a Gate instance for this gate type with the specified parameter.
+     * For parameterized gates, returns a ParameterizedGate instance.
+     * For fixed gates, ignores the theta parameter and returns a FixedGate instance.
+     * 
+     * @param theta the rotation angle parameter
+     * @return Gate instance
+     */
+    public Gate toGate(double theta) {
+        if (isParameterized()) {
+            return new ParameterizedGate(this, theta);
+        }
+        return new FixedGate(this);
     }
     
 }

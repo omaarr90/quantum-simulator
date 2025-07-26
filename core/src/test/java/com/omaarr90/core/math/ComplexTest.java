@@ -122,6 +122,9 @@ class ComplexTest {
         
         assertEquals(0.0, Complex.I.real());
         assertEquals(1.0, Complex.I.imaginary());
+        
+        assertEquals(0.0, Complex.NEG_I.real());
+        assertEquals(-1.0, Complex.NEG_I.imaginary());
     }
 
     @Test
@@ -180,5 +183,93 @@ class ComplexTest {
         
         Complex z3 = new Complex(-3, 4);
         assertEquals("(-3.0 + 4.0i)", z3.toString());
+    }
+
+    @Test
+    void testExp() {
+        // Test e^(i*0) = 1 + 0i
+        Complex exp0 = Complex.exp(0.0);
+        assertEquals(1.0, exp0.real(), EPSILON);
+        assertEquals(0.0, exp0.imaginary(), EPSILON);
+        
+        // Test e^(i*π/2) = 0 + 1i
+        Complex expPiHalf = Complex.exp(Math.PI / 2);
+        assertEquals(0.0, expPiHalf.real(), EPSILON);
+        assertEquals(1.0, expPiHalf.imaginary(), EPSILON);
+        
+        // Test e^(i*π) = -1 + 0i
+        Complex expPi = Complex.exp(Math.PI);
+        assertEquals(-1.0, expPi.real(), EPSILON);
+        assertEquals(0.0, expPi.imaginary(), EPSILON);
+        
+        // Test e^(i*3π/2) = 0 - 1i
+        Complex exp3PiHalf = Complex.exp(3 * Math.PI / 2);
+        assertEquals(0.0, exp3PiHalf.real(), EPSILON);
+        assertEquals(-1.0, exp3PiHalf.imaginary(), EPSILON);
+    }
+
+    @Test
+    void testArg() {
+        // Test arg(1 + 0i) = 0
+        Complex z1 = new Complex(1, 0);
+        assertEquals(0.0, z1.arg(), EPSILON);
+        
+        // Test arg(0 + 1i) = π/2
+        Complex z2 = new Complex(0, 1);
+        assertEquals(Math.PI / 2, z2.arg(), EPSILON);
+        
+        // Test arg(-1 + 0i) = π
+        Complex z3 = new Complex(-1, 0);
+        assertEquals(Math.PI, z3.arg(), EPSILON);
+        
+        // Test arg(0 - 1i) = -π/2
+        Complex z4 = new Complex(0, -1);
+        assertEquals(-Math.PI / 2, z4.arg(), EPSILON);
+        
+        // Test arg(1 + 1i) = π/4
+        Complex z5 = new Complex(1, 1);
+        assertEquals(Math.PI / 4, z5.arg(), EPSILON);
+        
+        // Test arg(-1 - 1i) = -3π/4
+        Complex z6 = new Complex(-1, -1);
+        assertEquals(-3 * Math.PI / 4, z6.arg(), EPSILON);
+    }
+
+    @Test
+    void testImmutabilityRegression() {
+        // Test that all operations return new instances and don't modify originals
+        Complex original = new Complex(2, 3);
+        Complex other = new Complex(1, 1);
+        
+        // Store original values
+        double origReal = original.real();
+        double origImag = original.imaginary();
+        
+        // Perform operations
+        Complex added = original.add(other);
+        Complex subtracted = original.sub(other);
+        Complex multiplied = original.mul(other);
+        Complex divided = original.div(other);
+        Complex scaled = original.scale(2.0);
+        Complex conjugated = original.conjugate();
+        
+        // Verify original is unchanged
+        assertEquals(origReal, original.real(), EPSILON);
+        assertEquals(origImag, original.imaginary(), EPSILON);
+        
+        // Verify results are different objects
+        assertNotSame(original, added);
+        assertNotSame(original, subtracted);
+        assertNotSame(original, multiplied);
+        assertNotSame(original, divided);
+        assertNotSame(original, scaled);
+        assertNotSame(original, conjugated);
+        
+        // Verify polar conversion returns immutable object
+        Complex.Polar polar = original.toPolar();
+        Complex fromPolar = polar.toComplex();
+        assertNotSame(original, fromPolar);
+        assertEquals(original.real(), fromPolar.real(), EPSILON);
+        assertEquals(original.imaginary(), fromPolar.imaginary(), EPSILON);
     }
 }

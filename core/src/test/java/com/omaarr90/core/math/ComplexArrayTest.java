@@ -231,4 +231,198 @@ public class ComplexArrayTest {
         }
     }
 
+    @Test
+    void divideInPlace_matches_scalar_reference() {
+        int n = 128;
+        ComplexArray a = randomArray(n);
+        ComplexArray b = randomArray(n);
+        
+        // Avoid division by zero
+        for (int i = 0; i < n; i++) {
+            Complex c = b.get(i);
+            if (c.abs2() < 1e-10) {
+                b.set(i, new Complex(1.0, 1.0));
+            }
+        }
+
+        // Scalar reference result
+        ComplexArray expected = a.copy();
+        for (int i = 0; i < n; i++) {
+            Complex dividend = expected.get(i);
+            Complex divisor = b.get(i);
+            expected.set(i, dividend.div(divisor));
+        }
+
+        // SIMD / scalar mix result
+        ComplexArray actual = a.copy().divideInPlace(b);
+
+        for (int i = 0; i < n; i++) {
+            assertEqualComplex(expected.get(i), actual.get(i));
+        }
+    }
+
+    @Test
+    void dotProduct_matches_scalar_reference() {
+        int n = 100;
+        ComplexArray a = randomArray(n);
+        ComplexArray b = randomArray(n);
+
+        // Scalar reference result
+        Complex expectedSum = new Complex(0, 0);
+        for (int i = 0; i < n; i++) {
+            Complex ai = a.get(i);
+            Complex bi = b.get(i);
+            // a[i] * conj(b[i])
+            Complex product = ai.mul(bi.conjugate());
+            expectedSum = expectedSum.add(product);
+        }
+
+        // SIMD / scalar mix result
+        Complex actual = a.dotProduct(b);
+
+        assertEqualComplex(expectedSum, actual);
+    }
+
+    @Test
+    void norms_matches_scalar_reference() {
+        int n = 64;
+        ComplexArray a = randomArray(n);
+
+        // Scalar reference result
+        double[] expected = new double[n];
+        for (int i = 0; i < n; i++) {
+            expected[i] = a.get(i).abs();
+        }
+
+        // SIMD / scalar mix result
+        double[] actual = a.norms();
+
+        assertEquals(expected.length, actual.length);
+        for (int i = 0; i < n; i++) {
+            assertEquals(expected[i], actual[i], 1e-9);
+        }
+    }
+
+    @Test
+    void norms2_matches_scalar_reference() {
+        int n = 64;
+        ComplexArray a = randomArray(n);
+
+        // Scalar reference result
+        double[] expected = new double[n];
+        for (int i = 0; i < n; i++) {
+            expected[i] = a.get(i).abs2();
+        }
+
+        // SIMD / scalar mix result
+        double[] actual = a.norms2();
+
+        assertEquals(expected.length, actual.length);
+        for (int i = 0; i < n; i++) {
+            assertEquals(expected[i], actual[i], 1e-9);
+        }
+    }
+
+    @Test
+    void asView_provides_readonly_access() {
+        int n = 10;
+        ComplexArray array = randomArray(n);
+        ComplexArrayView view = array.asView();
+
+        // Test that view provides access to same data
+        assertEquals(array.size(), view.size());
+        assertEquals(array.length(), view.length());
+        assertEquals(array.isAligned(), view.isAligned());
+
+        for (int i = 0; i < n; i++) {
+            assertEqualComplex(array.get(i), view.get(i));
+        }
+
+        // Test that view operations work
+        ComplexArray other = randomArray(n);
+        Complex dotProduct1 = array.dotProduct(other);
+        Complex dotProduct2 = view.dotProduct(other);
+        assertEqualComplex(dotProduct1, dotProduct2);
+
+        double[] norms1 = array.norms();
+        double[] norms2 = view.norms();
+        assertEquals(norms1.length, norms2.length);
+        for (int i = 0; i < n; i++) {
+            assertEquals(norms1[i], norms2[i], 1e-9);
+        }
+    }
+
+    @Test
+    void createAligned_works_correctly() {
+        // Test aligned size
+        ComplexArray aligned = ComplexArray.createAligned(64);
+        assertEquals(64, aligned.size());
+        
+        // Test unaligned size
+        ComplexArray unaligned = ComplexArray.createAligned(65);
+        assertEquals(65, unaligned.size());
+        
+        // Test zero size
+        ComplexArray zero = ComplexArray.createAligned(0);
+        assertEquals(0, zero.size());
+        
+        // Test negative size throws
+        assertThrows(IllegalArgumentException.class, () -> ComplexArray.createAligned(-1));
+    }
+
+    @Test
+    void validateAlignment_works() {
+        ComplexArray array = new ComplexArray(10);
+        // Should not throw
+        assertDoesNotThrow(() -> array.validateAlignment());
+    }
+
+    @Test
+    void immutability_regression_tests() {
+        int n = 10;
+        ComplexArray original = randomArray(n);
+        ComplexArray other = randomArray(n);
+        
+        // Store original values
+        Complex[] originalValues = new Complex[n];
+        for (int i = 0; i < n; i++) {
+            originalValues[i] = original.get(i);
+        }
+        
+        // Test that norms() and norms2() don't modify original
+        double[] norms = original.norms();
+        double[] norms2 = original.norms2();
+        
+        for (int i = 0; i < n; i++) {
+            assertEqualComplex(originalValues[i], original.get(i));
+        }
+        
+        // Test that dotProduct doesn't modify original
+        Complex dotProduct = original.dotProduct(other);
+        
+        for (int i = 0; i < n; i++) {
+            assertEqualComplex(originalValues[i], original.get(i));
+        }
+        
+        // Test that copy() creates independent instance
+        ComplexArray copy = original.copy();
+        assertNotSame(original, copy);
+        copy.scaleInPlace(2.0);
+        
+        // Original should be unchanged
+        for (int i = 0; i < n; i++) {
+            assertEqualComplex(originalValues[i], original.get(i));
+        }
+        
+        // Test that asView() doesn't expose mutability
+        ComplexArrayView view = original.asView();
+        assertNotNull(view);
+        assertEquals(original.size(), view.size());
+        
+        // View should provide access to same data
+        for (int i = 0; i < n; i++) {
+            assertEqualComplex(original.get(i), view.get(i));
+        }
+    }
+
 }

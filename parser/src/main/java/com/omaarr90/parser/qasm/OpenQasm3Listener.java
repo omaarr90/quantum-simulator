@@ -18,6 +18,16 @@ public interface OpenQasm3Listener extends ParseTreeListener {
 	 */
 	void exitProgram(OpenQasm3Parser.ProgramContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link OpenQasm3Parser#statementLine}.
+	 * @param ctx the parse tree
+	 */
+	void enterStatementLine(OpenQasm3Parser.StatementLineContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link OpenQasm3Parser#statementLine}.
+	 * @param ctx the parse tree
+	 */
+	void exitStatementLine(OpenQasm3Parser.StatementLineContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link OpenQasm3Parser#version}.
 	 * @param ctx the parse tree
 	 */
@@ -48,6 +58,16 @@ public interface OpenQasm3Listener extends ParseTreeListener {
 	 */
 	void exitQubitDeclaration(OpenQasm3Parser.QubitDeclarationContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link OpenQasm3Parser#classicalDeclaration}.
+	 * @param ctx the parse tree
+	 */
+	void enterClassicalDeclaration(OpenQasm3Parser.ClassicalDeclarationContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link OpenQasm3Parser#classicalDeclaration}.
+	 * @param ctx the parse tree
+	 */
+	void exitClassicalDeclaration(OpenQasm3Parser.ClassicalDeclarationContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link OpenQasm3Parser#gateApplication}.
 	 * @param ctx the parse tree
 	 */
@@ -67,6 +87,16 @@ public interface OpenQasm3Listener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitGateCall(OpenQasm3Parser.GateCallContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link OpenQasm3Parser#gateName}.
+	 * @param ctx the parse tree
+	 */
+	void enterGateName(OpenQasm3Parser.GateNameContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link OpenQasm3Parser#gateName}.
+	 * @param ctx the parse tree
+	 */
+	void exitGateName(OpenQasm3Parser.GateNameContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link OpenQasm3Parser#qubitArguments}.
 	 * @param ctx the parse tree

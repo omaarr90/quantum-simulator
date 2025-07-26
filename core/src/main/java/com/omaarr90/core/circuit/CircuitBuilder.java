@@ -64,8 +64,8 @@ public final class CircuitBuilder {
     }
 
     /**
-     * Reserves space for the specified total number of qubits, expanding the circuit capacity
-     * if necessary without losing existing operations.
+     * Reserves space for the specified total number of qubits, expanding the circuit capacity if
+     * necessary without losing existing operations.
      *
      * @param totalQubits the total number of qubits to reserve
      * @throws IllegalArgumentException if totalQubits is negative or less than current count

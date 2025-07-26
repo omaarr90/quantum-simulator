@@ -61,14 +61,21 @@ public class AstToCircuitVisitor extends OpenQasm3BaseVisitor<Circuit> {
         if (qubitMap.containsKey(qubitName)) {
             // Check if it was implicitly created or explicitly declared
             if (implicitlyCreatedRegisters.getOrDefault(qubitName, false)) {
-                // If it was implicitly created, we can now formalize it with the explicit declaration
+                // If it was implicitly created, we can now formalize it with the explicit
+                // declaration
                 // But we need to ensure the size is compatible
                 int existingStart = qubitMap.get(qubitName);
                 int existingSize = qubitCount - existingStart;
                 if (size < existingSize) {
                     throw createParseException(
-                            "Qubit register '" + qubitName + "' declared with size " + size 
-                            + " but already implicitly used with " + existingSize + " qubits", ctx);
+                            "Qubit register '"
+                                    + qubitName
+                                    + "' declared with size "
+                                    + size
+                                    + " but already implicitly used with "
+                                    + existingSize
+                                    + " qubits",
+                            ctx);
                 }
                 // If the explicit declaration is larger, expand the circuit
                 if (size > existingSize) {
@@ -81,7 +88,8 @@ public class AstToCircuitVisitor extends OpenQasm3BaseVisitor<Circuit> {
                 return null; // Declaration handled
             } else {
                 // It was already explicitly declared - this is a true duplicate
-                throw createParseException("Qubit register '" + qubitName + "' already declared", ctx);
+                throw createParseException(
+                        "Qubit register '" + qubitName + "' already declared", ctx);
             }
         }
 
@@ -121,7 +129,7 @@ public class AstToCircuitVisitor extends OpenQasm3BaseVisitor<Circuit> {
 
         // Get qubit arguments
         int[] qubits = getQubitIndices(ctx.qubitArguments());
-        
+
         // Ensure circuit has enough qubits for this operation (order independence)
         ensureQubitCapacity(qubits);
 
@@ -194,10 +202,10 @@ public class AstToCircuitVisitor extends OpenQasm3BaseVisitor<Circuit> {
             // Single qubit measurement
             int qubit = getQubitIndex(ctx.qubitReference());
             int cbit = getClassicalIndex(ctx.classicalReference());
-            
+
             // Ensure circuit has enough qubits for this operation
-            ensureQubitCapacity(new int[]{qubit});
-            
+            ensureQubitCapacity(new int[] {qubit});
+
             builder.measure(qubit, cbit);
         } else {
             // Measure all qubits (simplified implementation)
@@ -210,10 +218,10 @@ public class AstToCircuitVisitor extends OpenQasm3BaseVisitor<Circuit> {
     public Circuit visitBarrier(OpenQasm3Parser.BarrierContext ctx) {
         if (ctx.qubitArguments() != null) {
             int[] qubits = getQubitIndices(ctx.qubitArguments());
-            
+
             // Ensure circuit has enough qubits for this operation
             ensureQubitCapacity(qubits);
-            
+
             builder.barrier(qubits);
         } else {
             builder.barrier();
@@ -226,12 +234,12 @@ public class AstToCircuitVisitor extends OpenQasm3BaseVisitor<Circuit> {
     }
 
     /**
-     * Ensures the circuit has enough qubits to accommodate the given qubit indices.
-     * This supports order independence by implicitly allocating qubits when needed.
+     * Ensures the circuit has enough qubits to accommodate the given qubit indices. This supports
+     * order independence by implicitly allocating qubits when needed.
      */
     private void ensureQubitCapacity(int[] qubits) {
         if (qubits.length == 0) return;
-        
+
         // Find the maximum qubit index
         int maxQubit = -1;
         for (int qubit : qubits) {
@@ -239,7 +247,7 @@ public class AstToCircuitVisitor extends OpenQasm3BaseVisitor<Circuit> {
                 maxQubit = qubit;
             }
         }
-        
+
         // Expand circuit if needed (qubit indices are 0-based, so we need maxQubit + 1 qubits)
         int requiredQubits = maxQubit + 1;
         if (requiredQubits > qubitCount) {
@@ -273,14 +281,16 @@ public class AstToCircuitVisitor extends OpenQasm3BaseVisitor<Circuit> {
     }
 
     /**
-     * Determines if a register name is valid for implicit allocation.
-     * Only allows common register names to prevent typos from being silently accepted.
+     * Determines if a register name is valid for implicit allocation. Only allows common register
+     * names to prevent typos from being silently accepted.
      */
     private boolean isValidImplicitRegisterName(String name) {
         // Allow common register names that are likely intentional
-        return name.matches("^[qr]\\d*$") || // q, q1, q2, r, r1, r2, etc.
-               name.equals("qubit") || name.equals("qreg") ||
-               name.length() <= 2; // Short names like "a", "b", etc.
+        return name.matches("^[qr]\\d*$")
+                || // q, q1, q2, r, r1, r2, etc.
+                name.equals("qubit")
+                || name.equals("qreg")
+                || name.length() <= 2; // Short names like "a", "b", etc.
     }
 
     private int getClassicalIndex(OpenQasm3Parser.ClassicalReferenceContext ctx) {

@@ -73,8 +73,9 @@ public final class ComplexArray {
     }
 
     /**
-     * Creates a ComplexArray from existing <em>Structure‑of‑Arrays</em> buffers with a specified logical size.
-     * This allows creating arrays with padded physical capacity but smaller logical size for bounds checking.
+     * Creates a ComplexArray from existing <em>Structure‑of‑Arrays</em> buffers with a specified
+     * logical size. This allows creating arrays with padded physical capacity but smaller logical
+     * size for bounds checking.
      *
      * @param realParts the real parts array
      * @param imaginaryParts the imaginary parts array
@@ -86,7 +87,8 @@ public final class ComplexArray {
             throw new IllegalArgumentException("Real and imaginary arrays must be the same length");
         }
         if (logicalSize < 0 || logicalSize > realParts.length) {
-            throw new IllegalArgumentException("Logical size must be between 0 and array length: " + logicalSize);
+            throw new IllegalArgumentException(
+                    "Logical size must be between 0 and array length: " + logicalSize);
         }
         this.realParts = realParts;
         this.imaginaryParts = imaginaryParts;
@@ -97,7 +99,10 @@ public final class ComplexArray {
         return logicalSize;
     }
 
-    /** Returns the physical capacity of the internal arrays (may be larger than logical size for alignment). */
+    /**
+     * Returns the physical capacity of the internal arrays (may be larger than logical size for
+     * alignment).
+     */
     public int capacity() {
         return realParts.length;
     }

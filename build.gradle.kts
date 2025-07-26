@@ -49,7 +49,7 @@ allprojects {
         java {
             googleJavaFormat("1.22.0").aosp().reflowLongStrings()
             target("src/**/*.java")
-            targetExclude("**/generated/**", "**/build/**")
+            targetExclude("**/generated/**", "**/build/**", "**/qasm/**")
         }
         kotlin {
             ktfmt("0.46").kotlinlangStyle()

@@ -25,18 +25,22 @@ import java.util.Arrays;
 public final class ComplexArray {
 
     /** Preferred species for the current CPU/VM. */
-    private static final VectorSpecies<Double> SPECIES = DoubleVector.SPECIES_PREFERRED;
+    private static final VectorSpecies<Double> PREFERRED = DoubleVector.SPECIES_PREFERRED;
 
     /** {@code true} when the VM can generate vector instructions for the chosen species. */
-    private static final boolean SIMD_AVAILABLE = true;
+    private static final boolean SIMD_AVAILABLE = PREFERRED.length() > 1;
 
     private final double[] realParts;
     private final double[] imaginaryParts;
 
     /**
      * Creates an uninitialised ComplexArray of {@code size} elements.
+     * @throws IllegalArgumentException if size is negative
      */
     public ComplexArray(int size) {
+        if (size < 0) {
+            throw new IllegalArgumentException("Array size cannot be negative: " + size);
+        }
         this.realParts = new double[size];
         this.imaginaryParts = new double[size];
     }
@@ -58,10 +62,16 @@ public final class ComplexArray {
     }
 
     public Complex get(int idx) {
+        if (idx < 0 || idx >= size()) {
+            throw new IndexOutOfBoundsException("Index " + idx + " out of bounds for length " + size());
+        }
         return new Complex(realParts[idx], imaginaryParts[idx]);
     }
 
     public ComplexArray set(int idx, Complex value) {
+        if (idx < 0 || idx >= size()) {
+            throw new IndexOutOfBoundsException("Index " + idx + " out of bounds for length " + size());
+        }
         realParts[idx] = value.real();
         imaginaryParts[idx] = value.imaginary();
         return this;
@@ -94,12 +104,12 @@ public final class ComplexArray {
     /** Scales all elements by a real scalar {@code k} in‑place. */
     public ComplexArray scaleInPlace(double k) {
         if (SIMD_AVAILABLE) {
-            DoubleVector kVec = DoubleVector.broadcast(SPECIES, k);
-            int upper = SPECIES.loopBound(size());
+            DoubleVector kVec = DoubleVector.broadcast(PREFERRED, k);
+            int upper = PREFERRED.loopBound(size());
             int i = 0;
-            for (; i < upper; i += SPECIES.length()) {
-                DoubleVector vr = DoubleVector.fromArray(SPECIES, realParts, i);
-                DoubleVector vi = DoubleVector.fromArray(SPECIES, imaginaryParts, i);
+            for (; i < upper; i += PREFERRED.length()) {
+                DoubleVector vr = DoubleVector.fromArray(PREFERRED, realParts, i);
+                DoubleVector vi = DoubleVector.fromArray(PREFERRED, imaginaryParts, i);
                 vr.mul(kVec).intoArray(realParts, i);
                 vi.mul(kVec).intoArray(imaginaryParts, i);
             }
@@ -121,13 +131,13 @@ public final class ComplexArray {
         double sr = s.real();
         double si = s.imaginary();
         if (SIMD_AVAILABLE) {
-            DoubleVector vrScale = DoubleVector.broadcast(SPECIES, sr);
-            DoubleVector viScale = DoubleVector.broadcast(SPECIES, si);
-            int upper = SPECIES.loopBound(size());
+            DoubleVector vrScale = DoubleVector.broadcast(PREFERRED, sr);
+            DoubleVector viScale = DoubleVector.broadcast(PREFERRED, si);
+            int upper = PREFERRED.loopBound(size());
             int i = 0;
-            for (; i < upper; i += SPECIES.length()) {
-                DoubleVector vr = DoubleVector.fromArray(SPECIES, realParts, i);
-                DoubleVector vi = DoubleVector.fromArray(SPECIES, imaginaryParts, i);
+            for (; i < upper; i += PREFERRED.length()) {
+                DoubleVector vr = DoubleVector.fromArray(PREFERRED, realParts, i);
+                DoubleVector vi = DoubleVector.fromArray(PREFERRED, imaginaryParts, i);
                 DoubleVector newRe = vr.mul(vrScale).sub(vi.mul(viScale));
                 DoubleVector newIm = vr.mul(viScale).add(vi.mul(vrScale));
                 newRe.intoArray(realParts, i);
@@ -157,6 +167,65 @@ public final class ComplexArray {
         return new ComplexArray(Arrays.copyOf(realParts, realParts.length), Arrays.copyOf(imaginaryParts, imaginaryParts.length));
     }
 
+    /** Returns the number of elements in this array. */
+    public int length() {
+        return realParts.length;
+    }
+
+    /** Returns {@code true} if the array length aligns with the preferred species length. */
+    public boolean isAligned() {
+        return size() % PREFERRED.length() == 0;
+    }
+
+    /** Broadcast addition of a complex scalar {@code value} to all elements in‑place. */
+    public ComplexArray broadcastAdd(Complex value) {
+        double vr = value.real();
+        double vi = value.imaginary();
+        if (SIMD_AVAILABLE) {
+            DoubleVector vrVec = DoubleVector.broadcast(PREFERRED, vr);
+            DoubleVector viVec = DoubleVector.broadcast(PREFERRED, vi);
+            int upper = PREFERRED.loopBound(size());
+            int i = 0;
+            for (; i < upper; i += PREFERRED.length()) {
+                DoubleVector realVec = DoubleVector.fromArray(PREFERRED, realParts, i);
+                DoubleVector imagVec = DoubleVector.fromArray(PREFERRED, imaginaryParts, i);
+                realVec.add(vrVec).intoArray(realParts, i);
+                imagVec.add(viVec).intoArray(imaginaryParts, i);
+            }
+            for (; i < size(); i++) {
+                realParts[i] += vr;
+                imaginaryParts[i] += vi;
+            }
+        } else {
+            for (int i = 0; i < size(); i++) {
+                realParts[i] += vr;
+                imaginaryParts[i] += vi;
+            }
+        }
+        return this;
+    }
+
+    /** Element‑wise conjugation in‑place: {@code this[i] = conj(this[i])}. */
+    public ComplexArray conjugateInPlace() {
+        if (SIMD_AVAILABLE) {
+            DoubleVector negOne = DoubleVector.broadcast(PREFERRED, -1.0);
+            int upper = PREFERRED.loopBound(size());
+            int i = 0;
+            for (; i < upper; i += PREFERRED.length()) {
+                DoubleVector imagVec = DoubleVector.fromArray(PREFERRED, imaginaryParts, i);
+                imagVec.mul(negOne).intoArray(imaginaryParts, i);
+            }
+            for (; i < size(); i++) {
+                imaginaryParts[i] = -imaginaryParts[i];
+            }
+        } else {
+            for (int i = 0; i < size(); i++) {
+                imaginaryParts[i] = -imaginaryParts[i];
+            }
+        }
+        return this;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("[");
@@ -171,13 +240,13 @@ public final class ComplexArray {
     /* -----------------------  Vectorised kernels  -------------------------- */
 
     private void vectorAdd(ComplexArray o) {
-        int upper = SPECIES.loopBound(size());
+        int upper = PREFERRED.loopBound(size());
         int i = 0;
-        for (; i < upper; i += SPECIES.length()) {
-            DoubleVector vr = DoubleVector.fromArray(SPECIES, realParts, i);
-            DoubleVector vi = DoubleVector.fromArray(SPECIES, imaginaryParts, i);
-            DoubleVector or = DoubleVector.fromArray(SPECIES, o.realParts, i);
-            DoubleVector oi = DoubleVector.fromArray(SPECIES, o.imaginaryParts, i);
+        for (; i < upper; i += PREFERRED.length()) {
+            DoubleVector vr = DoubleVector.fromArray(PREFERRED, realParts, i);
+            DoubleVector vi = DoubleVector.fromArray(PREFERRED, imaginaryParts, i);
+            DoubleVector or = DoubleVector.fromArray(PREFERRED, o.realParts, i);
+            DoubleVector oi = DoubleVector.fromArray(PREFERRED, o.imaginaryParts, i);
             vr.add(or).intoArray(realParts, i);
             vi.add(oi).intoArray(imaginaryParts, i);
         }
@@ -188,13 +257,13 @@ public final class ComplexArray {
     }
 
     private void vectorMul(ComplexArray o) {
-        int upper = SPECIES.loopBound(size());
+        int upper = PREFERRED.loopBound(size());
         int i = 0;
-        for (; i < upper; i += SPECIES.length()) {
-            DoubleVector ar = DoubleVector.fromArray(SPECIES, realParts, i);
-            DoubleVector ai = DoubleVector.fromArray(SPECIES, imaginaryParts, i);
-            DoubleVector br = DoubleVector.fromArray(SPECIES, o.realParts, i);
-            DoubleVector bi = DoubleVector.fromArray(SPECIES, o.imaginaryParts, i);
+        for (; i < upper; i += PREFERRED.length()) {
+            DoubleVector ar = DoubleVector.fromArray(PREFERRED, realParts, i);
+            DoubleVector ai = DoubleVector.fromArray(PREFERRED, imaginaryParts, i);
+            DoubleVector br = DoubleVector.fromArray(PREFERRED, o.realParts, i);
+            DoubleVector bi = DoubleVector.fromArray(PREFERRED, o.imaginaryParts, i);
             DoubleVector newRe = ar.mul(br).sub(ai.mul(bi));
             DoubleVector newIm = ar.mul(bi).add(ai.mul(br));
             newRe.intoArray(realParts, i);

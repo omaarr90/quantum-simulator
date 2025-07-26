@@ -1,12 +1,16 @@
 package com.omaarr90.core.math;
 
 /**
- * Immutable complex number implementation.
+ * Immutable complex number implementation for quantum computing applications.
  * <p>
- *     Designed for intrinsic friendliness: only primitive {@code double} fields,
- *     no boxing, and a tiny record that the JIT can scalar‑replace. All
- *     operations return new {@link Complex} instances so callers can fluently
- *     chain arithmetic without hidden allocations.
+ * Represents a complex number z = a + bi where a and b are real numbers,
+ * and i is the imaginary unit (i² = -1).
+ * </p>
+ * <p>
+ * Designed for intrinsic friendliness: only primitive {@code double} fields,
+ * no boxing, and a tiny record that the JIT can scalar‑replace. All
+ * operations return new {@link Complex} instances so callers can fluently
+ * chain arithmetic without hidden allocations.
  * </p>
  */
 public record Complex(double real, double imaginary) {
@@ -41,6 +45,16 @@ public record Complex(double real, double imaginary) {
     }
 
     /**
+     * Subtracts {@code other} from {@code this}.
+     *
+     * @param other the complex number to subtract
+     * @return {@code this - other}
+     */
+    public Complex sub(Complex other) {
+        return new Complex(real - other.real, imaginary - other.imaginary);
+    }
+
+    /**
      * Multiplies {@code this} by {@code other}.
      *
      * @return {@code this * other}
@@ -49,6 +63,27 @@ public record Complex(double real, double imaginary) {
         return new Complex(
                 real * other.real - imaginary * other.imaginary,
                 real * other.imaginary + imaginary * other.real
+        );
+    }
+
+    /**
+     * Divides {@code this} by {@code other}.
+     * <p>
+     * Complex division: (a+bi)/(c+di) = ((ac+bd) + (bc-ad)i)/(c²+d²)
+     * </p>
+     *
+     * @param other the complex number to divide by
+     * @return {@code this / other}
+     * @throws ArithmeticException if {@code other} is zero (within machine precision)
+     */
+    public Complex div(Complex other) {
+        double denominator = other.real * other.real + other.imaginary * other.imaginary;
+        if (denominator == 0.0) {
+            throw new ArithmeticException("Division by zero complex number");
+        }
+        return new Complex(
+                (real * other.real + imaginary * other.imaginary) / denominator,
+                (imaginary * other.real - real * other.imaginary) / denominator
         );
     }
 
@@ -75,28 +110,34 @@ public record Complex(double real, double imaginary) {
      *--------------------------------------------------------------------*/
 
     /**
-     * Squared magnitude (|z|<sup>2</sup>) – avoids the cost of a square root.
+     * Squared magnitude (|z|²) – avoids the cost of a square root.
      * Ideal for tight loops and SIMD reductions.
+     *
+     * @return |z|² = real² + imaginary²
      */
-    public double norm() {
+    public double abs2() {
         return real * real + imaginary * imaginary;
     }
 
     /**
-     * Euclidean magnitude |z| (also called modulus).
+     * Euclidean magnitude |z| (also called modulus or absolute value).
      * Uses {@link Math#hypot(double, double)} for numerical stability.
+     *
+     * @return |z| = √(real² + imaginary²)
      */
-    public double modulus() {
+    public double abs() {
         return Math.hypot(real, imaginary);
     }
+
+
 
     /**
      * Converts to polar representation.
      *
-     * @return polar record (r, theta) where {@code r >= 0} and {@code theta} is in radians
+     * @return polar record (r, θ) where {@code r ≥ 0} and {@code θ} is in radians
      */
     public Polar toPolar() {
-        return new Polar(modulus(), Math.atan2(imaginary, real));
+        return new Polar(abs(), Math.atan2(imaginary, real));
     }
 
     /** Immutable polar coordinate representation. */

@@ -1,8 +1,6 @@
 package com.omaarr90.core.gate;
 
 import com.omaarr90.core.math.Complex;
-import java.util.Collections;
-import java.util.Map;
 
 /**
  * Record for immutable quantum gates with fixed matrices.
@@ -37,6 +35,17 @@ public record FixedGate(GateType type) implements Gate {
         {ZERO, ONE.scale(-1.0)}
     };
     
+    // Phase gates
+    private static final Complex[][] S_MATRIX = {
+        {ONE, ZERO},
+        {ZERO, I}
+    };
+    
+    private static final Complex[][] T_MATRIX = {
+        {ONE, ZERO},
+        {ZERO, ONE.scale(Math.cos(Math.PI / 4.0)).add(I.scale(Math.sin(Math.PI / 4.0)))}
+    };
+    
     // Two-qubit gates
     private static final Complex[][] CX_MATRIX = {
         {ONE, ZERO, ZERO, ZERO},
@@ -59,25 +68,26 @@ public record FixedGate(GateType type) implements Gate {
         {ZERO, ZERO, ZERO, ONE}
     };
     
-    // Immutable map of gate matrices
-    public static final Map<GateType, Complex[][]> GATE_MATRICES = Map.of(
-            GateType.H, H_MATRIX,
-            GateType.X, X_MATRIX,
-            GateType.Y, Y_MATRIX,
-            GateType.Z, Z_MATRIX,
-            GateType.CX, CX_MATRIX,
-            GateType.CZ, CZ_MATRIX,
-            GateType.SWAP, SWAP_MATRIX
-    );
-    
     public FixedGate {
-        if (!GATE_MATRICES.containsKey(type)) {
+        // Validate that the gate type is a fixed gate (not parameterized)
+        if (type.isParameterized()) {
             throw new IllegalArgumentException("Gate type " + type + " is not a fixed gate");
         }
     }
     
     @Override
     public Complex[][] matrix() {
-        return GATE_MATRICES.get(type);
+        return switch (type) {
+            case H -> H_MATRIX;
+            case X -> X_MATRIX;
+            case Y -> Y_MATRIX;
+            case Z -> Z_MATRIX;
+            case S -> S_MATRIX;
+            case T -> T_MATRIX;
+            case CX -> CX_MATRIX;
+            case CZ -> CZ_MATRIX;
+            case SWAP -> SWAP_MATRIX;
+            default -> throw new IllegalArgumentException("Unsupported fixed gate type: " + type);
+        };
     }
 }

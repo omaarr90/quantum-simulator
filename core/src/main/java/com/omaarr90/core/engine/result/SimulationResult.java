@@ -17,7 +17,15 @@ import java.util.Map;
  * @see TensorNetworkResult
  */
 public sealed interface SimulationResult
-        permits StateVectorResult, StabilizerResult, TensorNetworkResult {
+        permits StateVectorResult, StabilizerResult, TensorNetworkResult, EmptyResult {
+
+    /**
+     * Empty simulation result with zero shots and no measurement outcomes.
+     * 
+     * <p>This constant is used by no-op engines or when no simulation is performed.
+     * It represents a valid but empty result state.
+     */
+    SimulationResult EMPTY = new EmptyResult();
 
     /**
      * Returns a map of measurement outcomes to their occurrence counts.

@@ -123,24 +123,24 @@ public class StateVector implements Cloneable {
     /**
      * Returns the raw array of real parts.
      *
-     * <p><strong>PACKAGE-PRIVATE:</strong> This method exposes internal arrays for high-performance
-     * engine kernels. Use with caution.
+     * <p><strong>PUBLIC:</strong> This method exposes internal arrays for high-performance engine
+     * kernels. Use with caution.
      *
      * @return the real parts array (includes padding)
      */
-    double[] real() {
+    public double[] real() {
         return real;
     }
 
     /**
      * Returns the raw array of imaginary parts.
      *
-     * <p><strong>PACKAGE-PRIVATE:</strong> This method exposes internal arrays for high-performance
-     * engine kernels. Use with caution.
+     * <p><strong>PUBLIC:</strong> This method exposes internal arrays for high-performance engine
+     * kernels. Use with caution.
      *
      * @return the imaginary parts array (includes padding)
      */
-    double[] imag() {
+    public double[] imag() {
         return imag;
     }
 

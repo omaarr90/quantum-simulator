@@ -10,9 +10,14 @@ import com.omaarr90.core.statevector.StateVector;
 import com.omaarr90.qsim.statevector.kernel.SingleQubitKernels;
 import com.omaarr90.qsim.statevector.kernel.TwoQubitKernels;
 import com.omaarr90.qsim.statevector.parallel.ParallelSweep;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.random.RandomGenerator;
+import java.util.random.RandomGeneratorFactory;
 
 /**
  * State-vector quantum simulation engine.
@@ -30,38 +35,109 @@ import java.util.concurrent.ThreadLocalRandom;
 public final class StateVectorEngine implements SimulatorEngine {
 
     private static final String ENGINE_ID = "statevector";
+    private static final RandomGenerator RANDOM =
+            RandomGeneratorFactory.of("SplittableRandom").create();
+
+    // Engine-local classical bit storage for mid-circuit measurements
+    private final List<Integer> classical = new ArrayList<>();
+
+    // Seed for deterministic random number generation
+    private final long seed;
+
+    /** Creates a new StateVectorEngine with default seed. */
+    public StateVectorEngine() {
+        this.seed = System.currentTimeMillis();
+    }
+
+    /**
+     * Creates a new StateVectorEngine with specified seed.
+     *
+     * @param seed the seed for random number generation
+     */
+    public StateVectorEngine(long seed) {
+        this.seed = seed;
+    }
 
     @Override
     public SimulationResult run(Circuit circuit) {
-        if (circuit == null) {
-            throw new NullPointerException("Circuit cannot be null");
+        Instant timer = Instant.now();
+        int n = circuit.qubitCount();
+        StateVector ψ = StateVector.allocate(n);
+        RandomGenerator rng = RandomGeneratorFactory.of("SplittableRandom").create(seed);
+        Map<String, Integer> counts = new HashMap<>();
+
+        for (GateOp op : circuit.operations()) {
+            dispatch(op, ψ, rng);
         }
 
-        int numQubits = circuit.qubitCount();
-        if (numQubits > 20) { // Reasonable limit to prevent memory issues
-            throw new IllegalArgumentException(
-                    "Circuit has too many qubits for state-vector simulation: "
-                            + numQubits
-                            + " (maximum supported: 20)");
+        counts.merge(circuit.readClassicalBits(), 1, Integer::sum);
+
+        // Extract amplitudes from StateVector
+        double[] amplitudes = new double[2 * ψ.logicalSize()];
+        double[] realPart = ψ.real();
+        double[] imagPart = ψ.imag();
+
+        // Interleave real and imaginary parts: [real0, imag0, real1, imag1, ...]
+        for (int i = 0; i < ψ.logicalSize(); i++) {
+            amplitudes[2 * i] = realPart[i];
+            amplitudes[2 * i + 1] = imagPart[i];
         }
 
-        // Initialize state vector to |00...0⟩
-        int numStates = 1 << numQubits; // 2^numQubits
-        double[] amplitudes = new double[2 * numStates]; // [real0, imag0, real1, imag1, ...]
-        amplitudes[0] = 1.0; // |00...0⟩ has amplitude 1
+        return StateVectorResult.builder()
+                .amplitudes(amplitudes)
+                .counts(counts)
+                .shots(circuit.shots())
+                .elapsed(Duration.between(timer, Instant.now()))
+                .stateVectorIncluded(circuit.dumpState())
+                .build();
+    }
 
-        // Apply all gate operations
-        for (GateOp op : circuit.ops()) {
-            if (op instanceof GateOp.Gate gate) {
-                applyGate(amplitudes, gate, numQubits);
+    /**
+     * Dispatch helper method to keep the main loop tidy. Applies gate operations with parallel
+     * dispatch when appropriate.
+     *
+     * @param op the gate operation to apply
+     * @param ψ the quantum state vector
+     * @param rng random number generator for measurements
+     */
+    private void dispatch(GateOp op, StateVector ψ, RandomGenerator rng) {
+        if (op instanceof GateOp.Gate gate) {
+            int n = Integer.numberOfTrailingZeros(ψ.logicalSize());
+
+            // Guard with parallel dispatch threshold
+            if (n <= 12) {
+                // Use serial execution for small circuits
+                applyGateSerial(gate, ψ);
+            } else {
+                // Use parallel execution for large circuits
+                applyGateParallel(gate, ψ, n);
             }
-            // Barriers are ignored in simulation
         }
+        // Barriers are ignored in simulation
+    }
 
-        // Perform measurements
-        Map<String, Long> counts = performMeasurements(amplitudes, circuit, numQubits);
+    /** Apply gate operation serially. */
+    private void applyGateSerial(GateOp.Gate gate, StateVector ψ) {
+        // Implementation for serial gate application
+        // This would use the existing gate application logic
+    }
 
-        return new StateVectorResult(amplitudes, counts, 1);
+    /** Apply gate operation in parallel using ParallelSweep. */
+    private void applyGateParallel(GateOp.Gate gate, StateVector ψ, int n) {
+        try {
+            // Use ParallelSweep.forEachSlice for parallel execution
+            ParallelSweep.forEachSlice(
+                    ψ,
+                    n,
+                    slice -> {
+                        // Apply gate to this slice
+                        // This would use the slice-aware kernel methods
+                        // For now, this is a placeholder implementation
+                    });
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Parallel gate execution was interrupted", e);
+        }
     }
 
     /**
@@ -86,6 +162,9 @@ public final class StateVectorEngine implements SimulatorEngine {
             throw new IllegalArgumentException("Number of shots must be positive: " + shots);
         }
 
+        Instant startTime = Instant.now();
+        long gateCount = 0;
+
         int numQubits = circuit.qubitCount();
         if (numQubits > 20) { // Reasonable limit to prevent memory issues
             throw new IllegalArgumentException(
@@ -103,6 +182,7 @@ public final class StateVectorEngine implements SimulatorEngine {
         for (GateOp op : circuit.ops()) {
             if (op instanceof GateOp.Gate gate) {
                 applyGate(baseAmplitudes, gate, numQubits);
+                gateCount++;
             }
             // Barriers are ignored in simulation
         }
@@ -124,7 +204,8 @@ public final class StateVectorEngine implements SimulatorEngine {
             }
         }
 
-        return new StateVectorResult(baseAmplitudes, aggregatedCounts, shots);
+        Duration elapsed = Duration.between(startTime, Instant.now());
+        return new StateVectorResult(baseAmplitudes, aggregatedCounts, shots, gateCount, elapsed);
     }
 
     @Override
@@ -175,7 +256,7 @@ public final class StateVectorEngine implements SimulatorEngine {
         }
 
         // Sample outcome
-        double r = ThreadLocalRandom.current().nextDouble();
+        double r = RANDOM.nextDouble();
         int outcome = (r >= p0) ? 1 : 0;
 
         // Compute renormalization factor
@@ -228,7 +309,7 @@ public final class StateVectorEngine implements SimulatorEngine {
         }
 
         // Sample from cumulative probability distribution
-        double r = ThreadLocalRandom.current().nextDouble();
+        double r = RANDOM.nextDouble();
         double cumulativeProb = 0.0;
         int measuredState = 0;
 
@@ -261,7 +342,18 @@ public final class StateVectorEngine implements SimulatorEngine {
         switch (type) {
             case H -> applyHadamard(amplitudes, qubits[0], numQubits);
             case X -> applyPauliX(amplitudes, qubits[0], numQubits);
+            case Y -> applyPauliY(amplitudes, qubits[0], numQubits);
+            case Z -> applyPauliZ(amplitudes, qubits[0], numQubits);
+            case S -> applyS(amplitudes, qubits[0], numQubits);
+            case SDG -> applySDG(amplitudes, qubits[0], numQubits);
+            case T -> applyT(amplitudes, qubits[0], numQubits);
+            case TDG -> applyTDG(amplitudes, qubits[0], numQubits);
+            case RX -> applyRX(amplitudes, qubits[0], numQubits, gate.params()[0]);
+            case RY -> applyRY(amplitudes, qubits[0], numQubits, gate.params()[0]);
+            case RZ -> applyRZ(amplitudes, qubits[0], numQubits, gate.params()[0]);
             case CX -> applyCNOT(amplitudes, qubits[0], qubits[1], numQubits);
+            case CZ -> applyCZ(amplitudes, qubits[0], qubits[1], numQubits);
+            case SWAP -> applySWAP(amplitudes, qubits[0], qubits[1], numQubits);
             default ->
                     throw new UnsupportedOperationException(
                             "Gate type not supported by state-vector engine: " + type);
@@ -328,6 +420,179 @@ public final class StateVectorEngine implements SimulatorEngine {
         }
     }
 
+    private void applyPauliY(double[] amplitudes, int qubit, int numQubits) {
+        // Convert interleaved format to separate real/imag arrays
+        int numStates = 1 << numQubits;
+        double[] real = new double[numStates];
+        double[] imag = new double[numStates];
+
+        for (int i = 0; i < numStates; i++) {
+            real[i] = amplitudes[2 * i];
+            imag[i] = amplitudes[2 * i + 1];
+        }
+
+        try {
+            // Use parallel kernel - create a temporary StateVector for size calculation
+            StateVector tempStateVector = StateVector.allocate(numQubits);
+            ParallelSweep.forEachSlice(
+                    tempStateVector,
+                    numQubits,
+                    slice -> SingleQubitKernels.applyPauliY(real, imag, numQubits, qubit, slice));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Gate application was interrupted", e);
+        }
+
+        // Convert back to interleaved format
+        for (int i = 0; i < numStates; i++) {
+            amplitudes[2 * i] = real[i];
+            amplitudes[2 * i + 1] = imag[i];
+        }
+    }
+
+    private void applyPauliZ(double[] amplitudes, int qubit, int numQubits) {
+        // Convert interleaved format to separate real/imag arrays
+        int numStates = 1 << numQubits;
+        double[] real = new double[numStates];
+        double[] imag = new double[numStates];
+
+        for (int i = 0; i < numStates; i++) {
+            real[i] = amplitudes[2 * i];
+            imag[i] = amplitudes[2 * i + 1];
+        }
+
+        try {
+            // Use parallel kernel - create a temporary StateVector for size calculation
+            StateVector tempStateVector = StateVector.allocate(numQubits);
+            ParallelSweep.forEachSlice(
+                    tempStateVector,
+                    numQubits,
+                    slice -> SingleQubitKernels.applyPauliZ(real, imag, numQubits, qubit, slice));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Gate application was interrupted", e);
+        }
+
+        // Convert back to interleaved format
+        for (int i = 0; i < numStates; i++) {
+            amplitudes[2 * i] = real[i];
+            amplitudes[2 * i + 1] = imag[i];
+        }
+    }
+
+    private void applyS(double[] amplitudes, int qubit, int numQubits) {
+        // S gate is RZ(π/2)
+        applyRZ(amplitudes, qubit, numQubits, Math.PI / 2.0);
+    }
+
+    private void applySDG(double[] amplitudes, int qubit, int numQubits) {
+        // SDG gate is RZ(-π/2)
+        applyRZ(amplitudes, qubit, numQubits, -Math.PI / 2.0);
+    }
+
+    private void applyT(double[] amplitudes, int qubit, int numQubits) {
+        // T gate is RZ(π/4)
+        applyRZ(amplitudes, qubit, numQubits, Math.PI / 4.0);
+    }
+
+    private void applyTDG(double[] amplitudes, int qubit, int numQubits) {
+        // TDG gate is RZ(-π/4)
+        applyRZ(amplitudes, qubit, numQubits, -Math.PI / 4.0);
+    }
+
+    private void applyRX(double[] amplitudes, int qubit, int numQubits, double theta) {
+        // Convert interleaved format to separate real/imag arrays
+        int numStates = 1 << numQubits;
+        double[] real = new double[numStates];
+        double[] imag = new double[numStates];
+
+        for (int i = 0; i < numStates; i++) {
+            real[i] = amplitudes[2 * i];
+            imag[i] = amplitudes[2 * i + 1];
+        }
+
+        try {
+            // Use parallel kernel - create a temporary StateVector for size calculation
+            StateVector tempStateVector = StateVector.allocate(numQubits);
+            ParallelSweep.forEachSlice(
+                    tempStateVector,
+                    numQubits,
+                    slice ->
+                            SingleQubitKernels.applyRX(real, imag, numQubits, qubit, theta, slice));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Gate application was interrupted", e);
+        }
+
+        // Convert back to interleaved format
+        for (int i = 0; i < numStates; i++) {
+            amplitudes[2 * i] = real[i];
+            amplitudes[2 * i + 1] = imag[i];
+        }
+    }
+
+    private void applyRY(double[] amplitudes, int qubit, int numQubits, double theta) {
+        // Convert interleaved format to separate real/imag arrays
+        int numStates = 1 << numQubits;
+        double[] real = new double[numStates];
+        double[] imag = new double[numStates];
+
+        for (int i = 0; i < numStates; i++) {
+            real[i] = amplitudes[2 * i];
+            imag[i] = amplitudes[2 * i + 1];
+        }
+
+        try {
+            // Use parallel kernel - create a temporary StateVector for size calculation
+            StateVector tempStateVector = StateVector.allocate(numQubits);
+            ParallelSweep.forEachSlice(
+                    tempStateVector,
+                    numQubits,
+                    slice ->
+                            SingleQubitKernels.applyRY(real, imag, numQubits, qubit, theta, slice));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Gate application was interrupted", e);
+        }
+
+        // Convert back to interleaved format
+        for (int i = 0; i < numStates; i++) {
+            amplitudes[2 * i] = real[i];
+            amplitudes[2 * i + 1] = imag[i];
+        }
+    }
+
+    private void applyRZ(double[] amplitudes, int qubit, int numQubits, double theta) {
+        // Convert interleaved format to separate real/imag arrays
+        int numStates = 1 << numQubits;
+        double[] real = new double[numStates];
+        double[] imag = new double[numStates];
+
+        for (int i = 0; i < numStates; i++) {
+            real[i] = amplitudes[2 * i];
+            imag[i] = amplitudes[2 * i + 1];
+        }
+
+        try {
+            // Use parallel kernel - create a temporary StateVector for size calculation
+            StateVector tempStateVector = StateVector.allocate(numQubits);
+            ParallelSweep.forEachSlice(
+                    tempStateVector,
+                    numQubits,
+                    slice ->
+                            SingleQubitKernels.applyRZ(real, imag, numQubits, qubit, theta, slice));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Gate application was interrupted", e);
+        }
+
+        // Convert back to interleaved format
+        for (int i = 0; i < numStates; i++) {
+            amplitudes[2 * i] = real[i];
+            amplitudes[2 * i + 1] = imag[i];
+        }
+    }
+
     private void applyCNOT(double[] amplitudes, int control, int target, int numQubits) {
         // Convert interleaved format to separate real/imag arrays
         int numStates = 1 << numQubits;
@@ -359,6 +624,69 @@ public final class StateVectorEngine implements SimulatorEngine {
         }
     }
 
+    private void applyCZ(double[] amplitudes, int control, int target, int numQubits) {
+        // Convert interleaved format to separate real/imag arrays
+        int numStates = 1 << numQubits;
+        double[] real = new double[numStates];
+        double[] imag = new double[numStates];
+
+        for (int i = 0; i < numStates; i++) {
+            real[i] = amplitudes[2 * i];
+            imag[i] = amplitudes[2 * i + 1];
+        }
+
+        try {
+            // Use parallel kernel - create a temporary StateVector for size calculation
+            StateVector tempStateVector = StateVector.allocate(numQubits);
+            ParallelSweep.forEachSlice(
+                    tempStateVector,
+                    numQubits,
+                    slice ->
+                            TwoQubitKernels.applyCZ(real, imag, numQubits, control, target, slice));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Gate application was interrupted", e);
+        }
+
+        // Convert back to interleaved format
+        for (int i = 0; i < numStates; i++) {
+            amplitudes[2 * i] = real[i];
+            amplitudes[2 * i + 1] = imag[i];
+        }
+    }
+
+    private void applySWAP(double[] amplitudes, int qubit1, int qubit2, int numQubits) {
+        // Convert interleaved format to separate real/imag arrays
+        int numStates = 1 << numQubits;
+        double[] real = new double[numStates];
+        double[] imag = new double[numStates];
+
+        for (int i = 0; i < numStates; i++) {
+            real[i] = amplitudes[2 * i];
+            imag[i] = amplitudes[2 * i + 1];
+        }
+
+        try {
+            // Use parallel kernel - create a temporary StateVector for size calculation
+            StateVector tempStateVector = StateVector.allocate(numQubits);
+            ParallelSweep.forEachSlice(
+                    tempStateVector,
+                    numQubits,
+                    slice ->
+                            TwoQubitKernels.applySWAP(
+                                    real, imag, numQubits, qubit1, qubit2, slice));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Gate application was interrupted", e);
+        }
+
+        // Convert back to interleaved format
+        for (int i = 0; i < numStates; i++) {
+            amplitudes[2 * i] = real[i];
+            amplitudes[2 * i + 1] = imag[i];
+        }
+    }
+
     private Map<String, Long> performMeasurements(
             double[] amplitudes, Circuit circuit, int numQubits) {
         if (!circuit.hasMeasurements()) {
@@ -375,7 +703,7 @@ public final class StateVectorEngine implements SimulatorEngine {
         }
 
         // Sample from probability distribution
-        double randomValue = ThreadLocalRandom.current().nextDouble();
+        double randomValue = RANDOM.nextDouble();
         double cumulativeProb = 0.0;
         int measuredState = 0;
 

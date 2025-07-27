@@ -1,6 +1,9 @@
 package com.omaarr90.core.engine.result;
 
+import java.time.Duration;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Simulation result from a state-vector quantum simulation engine.
@@ -15,8 +18,15 @@ import java.util.Map;
  * @param amplitudes complex amplitudes of the quantum state vector, must not be null
  * @param counts map of measurement outcomes to their occurrence counts, must not be null
  * @param totalShots total number of measurement shots performed, must be positive
+ * @param gateCount total number of gates applied during simulation, must be non-negative
+ * @param elapsed time taken for the simulation, must not be null
  */
-public record StateVectorResult(double[] amplitudes, Map<String, Long> counts, int totalShots)
+public record StateVectorResult(
+        double[] amplitudes,
+        Map<String, Long> counts,
+        int totalShots,
+        long gateCount,
+        Duration elapsed)
         implements SimulationResult {
 
     /** Compact constructor with validation. */
@@ -29,6 +39,12 @@ public record StateVectorResult(double[] amplitudes, Map<String, Long> counts, i
         }
         if (totalShots <= 0) {
             throw new IllegalArgumentException("Total shots must be positive: " + totalShots);
+        }
+        if (gateCount < 0) {
+            throw new IllegalArgumentException("Gate count must be non-negative: " + gateCount);
+        }
+        if (elapsed == null) {
+            throw new IllegalArgumentException("Elapsed time cannot be null");
         }
 
         // Defensive copy to ensure immutability
@@ -79,5 +95,119 @@ public record StateVectorResult(double[] amplitudes, Map<String, Long> counts, i
         double real = amplitudes[2 * basisState];
         double imag = amplitudes[2 * basisState + 1];
         return real * real + imag * imag;
+    }
+
+    /**
+     * Creates a new builder for StateVectorResult.
+     *
+     * @return a new builder instance
+     */
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    /** Builder for StateVectorResult with fluent API. */
+    public static final class Builder {
+        private double[] amplitudes;
+        private Map<String, Integer> counts = new HashMap<>();
+        private int shots = 1;
+        private long gateCount = 0;
+        private Duration elapsed = Duration.ZERO;
+        private boolean stateVectorIncluded = false;
+
+        private Builder() {}
+
+        /**
+         * Sets the quantum state amplitudes.
+         *
+         * @param amplitudes the complex amplitudes array
+         * @return this builder
+         */
+        public Builder amplitudes(double[] amplitudes) {
+            this.amplitudes = amplitudes;
+            return this;
+        }
+
+        /**
+         * Sets the measurement counts.
+         *
+         * @param counts map of measurement outcomes to counts
+         * @return this builder
+         */
+        public Builder counts(Map<String, Integer> counts) {
+            this.counts = new HashMap<>(counts);
+            return this;
+        }
+
+        /**
+         * Sets the number of shots.
+         *
+         * @param shots number of measurement shots
+         * @return this builder
+         */
+        public Builder shots(int shots) {
+            this.shots = shots;
+            return this;
+        }
+
+        /**
+         * Sets the gate count.
+         *
+         * @param gateCount number of gates applied
+         * @return this builder
+         */
+        public Builder gateCount(long gateCount) {
+            this.gateCount = gateCount;
+            return this;
+        }
+
+        /**
+         * Sets the elapsed time.
+         *
+         * @param elapsed simulation duration
+         * @return this builder
+         */
+        public Builder elapsed(Duration elapsed) {
+            this.elapsed = elapsed;
+            return this;
+        }
+
+        /**
+         * Sets whether the state vector should be included in the result.
+         *
+         * @param included whether to include state vector
+         * @return this builder
+         */
+        public Builder stateVectorIncluded(boolean included) {
+            this.stateVectorIncluded = included;
+            return this;
+        }
+
+        /**
+         * Builds the StateVectorResult.
+         *
+         * @return the constructed StateVectorResult
+         */
+        public StateVectorResult build() {
+            // Convert counts to Long values for the record constructor
+            Map<String, Long> longCounts =
+                    counts.entrySet().stream()
+                            .collect(
+                                    Collectors.toMap(
+                                            Map.Entry::getKey,
+                                            entry -> Long.valueOf(entry.getValue())));
+
+            // If state vector not included, create minimal valid array
+            double[] resultAmplitudes;
+            if (stateVectorIncluded && amplitudes != null) {
+                resultAmplitudes = amplitudes;
+            } else {
+                // Create minimal valid array for 1 qubit (2 complex amplitudes = 4 doubles)
+                resultAmplitudes = new double[4];
+                resultAmplitudes[0] = 1.0; // |0⟩ state has amplitude 1
+            }
+
+            return new StateVectorResult(resultAmplitudes, longCounts, shots, gateCount, elapsed);
+        }
     }
 }

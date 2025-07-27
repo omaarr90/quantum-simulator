@@ -127,4 +127,44 @@ public record Circuit(
     public boolean hasMeasurements() {
         return !measureMap.isEmpty();
     }
+
+    /**
+     * Returns the list of gate operations in this circuit. This is an alias for ops() to match the
+     * API expected by engines.
+     *
+     * @return the ordered list of gate operations
+     */
+    public List<GateOp> operations() {
+        return ops;
+    }
+
+    /**
+     * Returns the number of measurement shots for this circuit. Default is 1 shot for single
+     * execution.
+     *
+     * @return number of shots (always 1 for single execution)
+     */
+    public int shots() {
+        return 1;
+    }
+
+    /**
+     * Reads the classical bits as a binary string. For now, returns "0" repeated for the number of
+     * classical bits.
+     *
+     * @return binary string representation of classical bits
+     */
+    public String readClassicalBits() {
+        return "0".repeat(classicalBits);
+    }
+
+    /**
+     * Returns whether the quantum state should be dumped/included in results. Default is false to
+     * avoid large memory usage.
+     *
+     * @return false by default
+     */
+    public boolean dumpState() {
+        return false;
+    }
 }

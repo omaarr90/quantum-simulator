@@ -1,0 +1,173 @@
+QUANTUM SIMULATOR PROJECT STRUCTURE
+=====================================
+
+quantum-simulator/                                    # Root directory of the quantum simulator project
+├── LICENSE                                           # Project license file
+├── README.md                                         # Main project documentation and usage instructions
+├── build.gradle.kts                                  # Root Gradle build configuration with multi-module setup
+├── settings.gradle.kts                               # Gradle settings defining all project modules
+├── gradlew                                           # Gradle wrapper script for Unix/Linux/macOS
+├── gradlew.bat                                       # Gradle wrapper script for Windows
+├── quantum-simulator.iml                             # IntelliJ IDEA module file
+├── spotbugs-exclude.xml                              # SpotBugs static analysis exclusion rules
+│
+├── gradle/                                           # Gradle wrapper configuration
+│   └── wrapper/
+│       ├── gradle-wrapper.jar                       # Gradle wrapper JAR file
+│       └── gradle-wrapper.properties                # Gradle wrapper version configuration
+│
+├── core/                                             # CORE MODULE - Foundation of the quantum simulator
+│   ├── build.gradle.kts                             # Core module build configuration
+│   └── src/
+│       ├── main/java/com/omaarr90/core/
+│       │   ├── circuit/                              # Quantum circuit representation
+│       │   │   ├── Circuit.java                     # Main circuit data structure
+│       │   │   ├── CircuitBuilder.java              # Builder pattern for circuit construction
+│       │   │   └── GateOp.java                      # Gate operation representation
+│       │   ├── engine/                               # Simulation engine framework
+│       │   │   ├── SimulatorEngine.java             # Main engine interface
+│       │   │   ├── SimulatorEngineRegistry.java     # ServiceLoader-based engine discovery
+│       │   │   └── result/                          # Simulation result types
+│       │   │       ├── EmptyResult.java             # Empty result implementation
+│       │   │       ├── SimulationResult.java        # Base result interface
+│       │   │       ├── StabilizerResult.java        # Stabilizer formalism results
+│       │   │       ├── StateVectorResult.java       # State vector simulation results
+│       │   │       └── TensorNetworkResult.java     # Tensor network results
+│       │   ├── gate/                                 # Quantum gate definitions
+│       │   │   ├── FixedGate.java                   # Fixed (non-parameterized) gates
+│       │   │   ├── Gate.java                        # Base gate interface
+│       │   │   ├── GateType.java                    # Enumeration of gate types
+│       │   │   └── ParameterizedGate.java           # Parameterized gates (e.g., rotation gates)
+│       │   └── math/                                 # Mathematical utilities
+│       │       ├── Complex.java                     # Immutable complex number implementation
+│       │       ├── ComplexArray.java                # Complex number array with SIMD optimizations
+│       │       └── ComplexArrayView.java            # View over complex arrays
+│       └── test/java/com/omaarr90/core/             # Core module unit tests
+│           ├── circuit/CircuitBuilderTest.java      # Circuit builder tests
+│           ├── engine/
+│           │   ├── BellCircuitTest.java             # Bell state circuit integration tests
+│           │   └── SimulatorEngineRegistryTest.java # Engine discovery tests
+│           ├── gate/GateMatricesTest.java           # Gate matrix validation tests
+│           └── math/
+│               ├── ComplexArrayTest.java            # Complex array tests
+│               └── ComplexTest.java                 # Complex number tests
+│
+├── engines/                                          # SIMULATION ENGINES - Pluggable simulation backends
+│   ├── noop/                                        # No-operation engine for testing
+│   │   ├── build.gradle.kts                        # NoOp engine build configuration
+│   │   └── src/
+│   │       ├── main/
+│   │       │   ├── java/com/omaarr90/qsim/noop/
+│   │       │   │   └── NoOpEngine.java              # No-operation engine implementation
+│   │       │   └── resources/META-INF/services/
+│   │       │       └── com.omaarr90.core.engine.SimulatorEngine  # ServiceLoader registration
+│   │       └── test/java/com/omaarr90/qsim/noop/
+│   │           └── NoOpEngineDiscoveryTest.java     # Engine discovery tests
+│   ├── stabilizer/                                  # Stabilizer formalism simulation engine
+│   │   ├── build.gradle.kts                        # Stabilizer engine build configuration
+│   │   └── src/
+│   │       ├── main/
+│   │       │   ├── java/com/omaarr90/
+│   │       │   │   ├── Main.java                    # Stabilizer engine main class
+│   │       │   │   └── qsim/stabilizer/
+│   │       │   │       └── StabilizerEngine.java   # Stabilizer simulation implementation
+│   │       │   └── resources/META-INF/services/
+│   │       │       └── com.omaarr90.core.engine.SimulatorEngine  # ServiceLoader registration
+│   └── statevector/                                 # State vector simulation engine
+│       ├── build.gradle.kts                        # State vector engine build configuration
+│       └── src/
+│           ├── main/
+│           │   ├── java/com/omaarr90/
+│           │   │   ├── Main.java                    # State vector engine main class
+│           │   │   └── qsim/statevector/
+│           │   │       └── StateVectorEngine.java  # State vector simulation implementation
+│           │   └── resources/META-INF/services/
+│           │       └── com.omaarr90.core.engine.SimulatorEngine  # ServiceLoader registration
+│
+├── parser/                                           # PARSER MODULE - OpenQASM 3 language support
+│   ├── build.gradle.kts                             # Parser module build configuration
+│   └── src/
+│       ├── main/
+│       │   ├── antlr/OpenQasm3.g4                   # ANTLR grammar for OpenQASM 3
+│       │   └── java/com/omaarr90/parser/
+│       │       ├── AstToCircuitVisitor.java         # AST to circuit converter
+│       │       ├── OpenQasmParser.java              # Main parser interface
+│       │       ├── ParseException.java              # Parser exception handling
+│       │       └── qasm/                            # Generated ANTLR parser classes
+│       │           ├── OpenQasm3.interp            # ANTLR interpreter data
+│       │           ├── OpenQasm3.tokens             # ANTLR token definitions
+│       │           ├── OpenQasm3BaseListener.java  # Generated base listener
+│       │           ├── OpenQasm3BaseVisitor.java   # Generated base visitor
+│       │           ├── OpenQasm3Lexer.interp       # ANTLR lexer interpreter data
+│       │           ├── OpenQasm3Lexer.java         # Generated lexer
+│       │           ├── OpenQasm3Lexer.tokens        # ANTLR lexer tokens
+│       │           ├── OpenQasm3Listener.java      # Generated listener interface
+│       │           ├── OpenQasm3Parser.java        # Generated parser
+│       │           └── OpenQasm3Visitor.java       # Generated visitor interface
+│       └── test/
+│           ├── java/com/omaarr90/parser/
+│           │   └── OpenQasmParserTest.java          # Parser functionality tests
+│           └── resources/                           # Test QASM files
+│               ├── bell.qasm                        # Bell state test circuit
+│               ├── ghz.qasm                         # GHZ state test circuit
+│               └── invalid.qasm                     # Invalid QASM for error testing
+│
+├── cli/                                              # CLI MODULE - Command-line interface
+│   ├── build.gradle.kts                             # CLI module build configuration
+│   └── src/main/
+│       ├── java/com/omaarr90/Main.java              # CLI application entry point
+│       └── resources/META-INF/native-image/
+│           └── native-image.properties              # GraalVM native image configuration
+│
+├── benchmarks/                                       # BENCHMARKS MODULE - Performance testing
+│   ├── build.gradle.kts                             # Benchmarks build configuration with JMH
+│   └── src/main/java/com/omaarr90/benchmarks/
+│       └── ComplexArrayBenchmark.java               # JMH benchmarks for complex array operations
+│
+└── noise/                                            # NOISE MODULE - Quantum noise modeling
+    ├── build.gradle.kts                             # Noise module build configuration
+    └── src/main/java/com/omaarr90/Main.java         # Noise module main class
+
+KEY ARCHITECTURAL FEATURES:
+==========================
+
+1. MULTI-MODULE ARCHITECTURE (8 modules):
+   - Separation of concerns with dedicated modules for different functionality
+   - Clean dependency management between modules
+   - Pluggable engine system using ServiceLoader pattern
+
+2. CORE FOUNDATION:
+   - Immutable data structures (Complex, Circuit)
+   - Performance-optimized math operations with SIMD support
+   - Comprehensive gate and circuit representation
+
+3. PLUGGABLE SIMULATION ENGINES:
+   - ServiceLoader-based automatic discovery
+   - Multiple simulation backends (state vector, stabilizer, no-op)
+   - Extensible architecture for adding new engines
+
+4. OPENQASM 3 SUPPORT:
+   - Full ANTLR-based parser implementation
+   - AST to internal circuit conversion
+   - Comprehensive test coverage with sample circuits
+
+5. MODERN JAVA FEATURES:
+   - Java 24 with preview features enabled
+   - Records for immutable data structures
+   - Incubator Vector API for SIMD optimizations
+   - Pattern matching and modern language constructs
+
+6. BUILD AND TOOLING:
+   - Gradle with Kotlin DSL
+   - GraalVM native image support for CLI
+   - Comprehensive code quality tools (Spotless, SpotBugs)
+   - JMH benchmarking framework
+
+7. TESTING STRATEGY:
+   - JUnit 5 with comprehensive unit tests
+   - Integration tests for engine discovery
+   - Performance benchmarks
+   - Sample QASM circuits for validation
+
+This structure supports a scalable, high-performance quantum circuit simulator
+with clean separation between parsing, simulation engines, and user interfaces.

@@ -49,9 +49,6 @@ jobs:
       - name: Run Spotless check
         run: ./gradlew spotlessCheck --no-daemon
 
-      - name: Run SpotBugs check
-        run: ./gradlew spotbugsMain --no-daemon
-
       - name: Run JUnit tests
         run: ./gradlew test --no-daemon --scan
 

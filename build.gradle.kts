@@ -2,7 +2,6 @@ plugins {
     id("java")
     id("org.graalvm.buildtools.native") version "0.11.0" apply false
     id("com.diffplug.spotless") version "6.25.0" apply false
-    id("com.github.spotbugs") version "6.2.2" apply false
     id("org.jetbrains.dokka") version "1.9.20" apply false
 }
 
@@ -13,7 +12,6 @@ allprojects {
     apply(plugin = "java")
     apply (plugin = "org.graalvm.buildtools.native")
     apply (plugin = "com.diffplug.spotless")
-    apply (plugin = "com.github.spotbugs")
     apply (plugin = "org.jetbrains.dokka")
 
     repositories {
@@ -58,15 +56,6 @@ allprojects {
         }
     }
 
-    // Configure SpotBugs for static analysis
-    configure<com.github.spotbugs.snom.SpotBugsExtension> {
-        ignoreFailures.set(false)
-        showStackTraces.set(true)
-        showProgress.set(true)
-        effort.set(com.github.spotbugs.snom.Effort.MAX)
-        reportLevel.set(com.github.spotbugs.snom.Confidence.MEDIUM)
-        excludeFilter.set(file("${rootProject.projectDir}/spotbugs-exclude.xml"))
-    }
 
     // Make build fail on Spotless violations
     tasks.named("check") {

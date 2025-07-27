@@ -9,7 +9,6 @@ quantum-simulator/                                    # Root directory of the qu
 ├── gradlew                                           # Gradle wrapper script for Unix/Linux/macOS
 ├── gradlew.bat                                       # Gradle wrapper script for Windows
 ├── quantum-simulator.iml                             # IntelliJ IDEA module file
-├── spotbugs-exclude.xml                              # SpotBugs static analysis exclusion rules
 │
 ├── gradle/                                           # Gradle wrapper configuration
 │   └── wrapper/
@@ -160,7 +159,7 @@ KEY ARCHITECTURAL FEATURES:
 6. BUILD AND TOOLING:
    - Gradle with Kotlin DSL
    - GraalVM native image support for CLI
-   - Comprehensive code quality tools (Spotless, SpotBugs)
+   - Comprehensive code quality tools (Spotless)
    - JMH benchmarking framework
 
 7. TESTING STRATEGY:

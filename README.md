@@ -217,10 +217,6 @@ To check code formatting:
 ./gradlew spotlessApply
 ```
 
-To run static analysis:
-```bash
-./gradlew spotbugsMain
-```
 
 ## Documentation
 

@@ -259,8 +259,8 @@ public final class SingleQubitKernels {
     /**
      * Applies the Hadamard gate to the specified qubit within an amplitude slice.
      *
-     * <p>This method is optimized for parallel execution by only processing states
-     * within the specified slice boundaries.
+     * <p>This method is optimized for parallel execution by only processing states within the
+     * specified slice boundaries.
      *
      * @param real the real parts of the state vector amplitudes
      * @param imag the imaginary parts of the state vector amplitudes
@@ -269,7 +269,8 @@ public final class SingleQubitKernels {
      * @param slice the amplitude slice to process
      * @throws IllegalArgumentException if targetQubit is out of range
      */
-    public static void applyHadamard(double[] real, double[] imag, int numQubits, int targetQubit, AmplitudeSlice slice) {
+    public static void applyHadamard(
+            double[] real, double[] imag, int numQubits, int targetQubit, AmplitudeSlice slice) {
         validateInputs(real, imag, numQubits, targetQubit);
 
         final int qubitMask = 1 << targetQubit;
@@ -282,7 +283,9 @@ public final class SingleQubitKernels {
         }
 
         // Process states in pairs within the slice boundaries
-        for (int state = startState; state < slice.end() && state < (1 << numQubits); state += blockStep) {
+        for (int state = startState;
+                state < slice.end() && state < (1 << numQubits);
+                state += blockStep) {
             // Only process if both the base state and flipped state are within bounds
             int flippedState = state | qubitMask;
             if (state >= slice.start() && flippedState < slice.end()) {
@@ -301,7 +304,8 @@ public final class SingleQubitKernels {
      * @param slice the amplitude slice to process
      * @throws IllegalArgumentException if targetQubit is out of range
      */
-    public static void applyPauliX(double[] real, double[] imag, int numQubits, int targetQubit, AmplitudeSlice slice) {
+    public static void applyPauliX(
+            double[] real, double[] imag, int numQubits, int targetQubit, AmplitudeSlice slice) {
         validateInputs(real, imag, numQubits, targetQubit);
 
         final int qubitMask = 1 << targetQubit;
@@ -314,7 +318,9 @@ public final class SingleQubitKernels {
         }
 
         // Process states in pairs within the slice boundaries
-        for (int state = startState; state < slice.end() && state < (1 << numQubits); state += blockStep) {
+        for (int state = startState;
+                state < slice.end() && state < (1 << numQubits);
+                state += blockStep) {
             // Only process if both the base state and flipped state are within bounds
             int flippedState = state | qubitMask;
             if (state >= slice.start() && flippedState < slice.end()) {
@@ -333,7 +339,8 @@ public final class SingleQubitKernels {
      * @param slice the amplitude slice to process
      * @throws IllegalArgumentException if targetQubit is out of range
      */
-    public static void applyPauliY(double[] real, double[] imag, int numQubits, int targetQubit, AmplitudeSlice slice) {
+    public static void applyPauliY(
+            double[] real, double[] imag, int numQubits, int targetQubit, AmplitudeSlice slice) {
         validateInputs(real, imag, numQubits, targetQubit);
 
         final int qubitMask = 1 << targetQubit;
@@ -346,7 +353,9 @@ public final class SingleQubitKernels {
         }
 
         // Process states in pairs within the slice boundaries
-        for (int state = startState; state < slice.end() && state < (1 << numQubits); state += blockStep) {
+        for (int state = startState;
+                state < slice.end() && state < (1 << numQubits);
+                state += blockStep) {
             // Only process if both the base state and flipped state are within bounds
             int flippedState = state | qubitMask;
             if (state >= slice.start() && flippedState < slice.end()) {
@@ -365,7 +374,8 @@ public final class SingleQubitKernels {
      * @param slice the amplitude slice to process
      * @throws IllegalArgumentException if targetQubit is out of range
      */
-    public static void applyPauliZ(double[] real, double[] imag, int numQubits, int targetQubit, AmplitudeSlice slice) {
+    public static void applyPauliZ(
+            double[] real, double[] imag, int numQubits, int targetQubit, AmplitudeSlice slice) {
         validateInputs(real, imag, numQubits, targetQubit);
 
         final int qubitMask = 1 << targetQubit;
@@ -389,7 +399,13 @@ public final class SingleQubitKernels {
      * @param slice the amplitude slice to process
      * @throws IllegalArgumentException if targetQubit is out of range
      */
-    public static void applyRX(double[] real, double[] imag, int numQubits, int targetQubit, double theta, AmplitudeSlice slice) {
+    public static void applyRX(
+            double[] real,
+            double[] imag,
+            int numQubits,
+            int targetQubit,
+            double theta,
+            AmplitudeSlice slice) {
         validateInputs(real, imag, numQubits, targetQubit);
 
         final double cosHalf = Math.cos(theta / 2.0);
@@ -404,7 +420,9 @@ public final class SingleQubitKernels {
         }
 
         // Process states in pairs within the slice boundaries
-        for (int state = startState; state < slice.end() && state < (1 << numQubits); state += blockStep) {
+        for (int state = startState;
+                state < slice.end() && state < (1 << numQubits);
+                state += blockStep) {
             // Only process if both the base state and flipped state are within bounds
             int flippedState = state | qubitMask;
             if (state >= slice.start() && flippedState < slice.end()) {
@@ -424,7 +442,13 @@ public final class SingleQubitKernels {
      * @param slice the amplitude slice to process
      * @throws IllegalArgumentException if targetQubit is out of range
      */
-    public static void applyRY(double[] real, double[] imag, int numQubits, int targetQubit, double theta, AmplitudeSlice slice) {
+    public static void applyRY(
+            double[] real,
+            double[] imag,
+            int numQubits,
+            int targetQubit,
+            double theta,
+            AmplitudeSlice slice) {
         validateInputs(real, imag, numQubits, targetQubit);
 
         final double cosHalf = Math.cos(theta / 2.0);
@@ -439,7 +463,9 @@ public final class SingleQubitKernels {
         }
 
         // Process states in pairs within the slice boundaries
-        for (int state = startState; state < slice.end() && state < (1 << numQubits); state += blockStep) {
+        for (int state = startState;
+                state < slice.end() && state < (1 << numQubits);
+                state += blockStep) {
             // Only process if both the base state and flipped state are within bounds
             int flippedState = state | qubitMask;
             if (state >= slice.start() && flippedState < slice.end()) {
@@ -459,7 +485,13 @@ public final class SingleQubitKernels {
      * @param slice the amplitude slice to process
      * @throws IllegalArgumentException if targetQubit is out of range
      */
-    public static void applyRZ(double[] real, double[] imag, int numQubits, int targetQubit, double theta, AmplitudeSlice slice) {
+    public static void applyRZ(
+            double[] real,
+            double[] imag,
+            int numQubits,
+            int targetQubit,
+            double theta,
+            AmplitudeSlice slice) {
         validateInputs(real, imag, numQubits, targetQubit);
 
         final double cosHalf = Math.cos(theta / 2.0);

@@ -3,15 +3,15 @@ package com.omaarr90.qsim.statevector.parallel;
 /**
  * Represents a contiguous slice of amplitude indices for parallel processing.
  *
- * <p>This record defines a half-open interval [start, end) that represents a chunk of quantum
- * state amplitudes to be processed by a single thread. The slice boundaries are designed to be
+ * <p>This record defines a half-open interval [start, end) that represents a chunk of quantum state
+ * amplitudes to be processed by a single thread. The slice boundaries are designed to be
  * cache-aligned and avoid false sharing between parallel workers.
  *
  * <p><strong>IMMUTABILITY GUARANTEE:</strong> This record is completely immutable and thread-safe.
  *
  * <p><strong>PERFORMANCE NOTE:</strong> Slice boundaries should be aligned to SIMD vector
- * boundaries (typically multiples of 8 or 16 doubles) to maintain vectorization efficiency
- * within each slice.
+ * boundaries (typically multiples of 8 or 16 doubles) to maintain vectorization efficiency within
+ * each slice.
  *
  * @param start the inclusive start index of the amplitude slice
  * @param end the exclusive end index of the amplitude slice

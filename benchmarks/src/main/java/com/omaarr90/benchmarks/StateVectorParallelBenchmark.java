@@ -8,11 +8,12 @@ import org.openjdk.jmh.annotations.*;
 /**
  * JMH benchmark for measuring parallel execution speedup in StateVector engine.
  *
- * <p>This benchmark demonstrates and documents that the new parallel sweep delivers
- * ≥3× speed-up over the single-thread baseline on an 8-core CPU. The benchmark
- * compares parallel vs serial execution across different circuit sizes.
+ * <p>This benchmark demonstrates and documents that the new parallel sweep delivers ≥3× speed-up
+ * over the single-thread baseline on an 8-core CPU. The benchmark compares parallel vs serial
+ * execution across different circuit sizes.
  *
  * <p><strong>BENCHMARK DESIGN:</strong>
+ *
  * <ul>
  *   <li>Parameters: qubits (10,14,20,24), gates (256,1024), parallel (true/false)
  *   <li>Mode: SingleShotTime with 10 measurement iterations and 5 warmup iterations
@@ -21,6 +22,7 @@ import org.openjdk.jmh.annotations.*;
  * </ul>
  *
  * <p><strong>EXPECTED RESULTS:</strong>
+ *
  * <ul>
  *   <li>qubits=10: speed-up ≈ 1.0 (auto-fallback to serial for ≤12 qubits)
  *   <li>qubits≥14: speed-up ≥ 3.0× for parallel vs serial execution
@@ -48,9 +50,9 @@ public class StateVectorParallelBenchmark extends BenchmarkBase {
     /**
      * Configures system properties to control parallel vs serial execution.
      *
-     * <p>When {@code parallel=false}, sets {@code qsim.forceSerial=true} to force
-     * serial execution. When {@code parallel=true}, ensures the property is cleared
-     * to allow normal parallel execution logic.
+     * <p>When {@code parallel=false}, sets {@code qsim.forceSerial=true} to force serial execution.
+     * When {@code parallel=true}, ensures the property is cleared to allow normal parallel
+     * execution logic.
      */
     @Override
     protected void configureExecution() {
@@ -66,9 +68,8 @@ public class StateVectorParallelBenchmark extends BenchmarkBase {
     /**
      * Generates a random quantum circuit for benchmarking.
      *
-     * <p>Uses a fixed seed based on benchmark parameters to ensure reproducible
-     * circuit generation within each trial while avoiding cache effects between
-     * different parameter combinations.
+     * <p>Uses a fixed seed based on benchmark parameters to ensure reproducible circuit generation
+     * within each trial while avoiding cache effects between different parameter combinations.
      *
      * @return a randomly generated quantum circuit
      */
@@ -83,9 +84,8 @@ public class StateVectorParallelBenchmark extends BenchmarkBase {
     /**
      * Executes the quantum circuit and returns the simulation result.
      *
-     * <p>This is the main benchmark method that measures the execution time
-     * of circuit simulation. The circuit and engine are initialized once per
-     * trial in the setup phase.
+     * <p>This is the main benchmark method that measures the execution time of circuit simulation.
+     * The circuit and engine are initialized once per trial in the setup phase.
      *
      * @return the simulation result
      */

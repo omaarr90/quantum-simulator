@@ -38,53 +38,49 @@ class AmplitudeSliceTest {
 
     @Test
     void testInvalidConstruction_NegativeStart() {
-        IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
-                () -> new AmplitudeSlice(-1, 10));
+        IllegalArgumentException exception =
+                assertThrows(IllegalArgumentException.class, () -> new AmplitudeSlice(-1, 10));
         assertTrue(exception.getMessage().contains("Start index cannot be negative"));
     }
 
     @Test
     void testInvalidConstruction_NegativeEnd() {
-        IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
-                () -> new AmplitudeSlice(0, -1));
+        IllegalArgumentException exception =
+                assertThrows(IllegalArgumentException.class, () -> new AmplitudeSlice(0, -1));
         assertTrue(exception.getMessage().contains("End index cannot be negative"));
     }
 
     @Test
     void testInvalidConstruction_StartEqualsEnd() {
-        IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
-                () -> new AmplitudeSlice(5, 5));
+        IllegalArgumentException exception =
+                assertThrows(IllegalArgumentException.class, () -> new AmplitudeSlice(5, 5));
         assertTrue(exception.getMessage().contains("Start index must be less than end index"));
     }
 
     @Test
     void testInvalidConstruction_StartGreaterThanEnd() {
-        IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
-                () -> new AmplitudeSlice(10, 5));
+        IllegalArgumentException exception =
+                assertThrows(IllegalArgumentException.class, () -> new AmplitudeSlice(10, 5));
         assertTrue(exception.getMessage().contains("Start index must be less than end index"));
     }
 
     @Test
     void testContains() {
         AmplitudeSlice slice = new AmplitudeSlice(10, 20);
-        
+
         // Test boundaries
-        assertFalse(slice.contains(9));   // Before start
-        assertTrue(slice.contains(10));   // At start (inclusive)
-        assertTrue(slice.contains(15));   // In middle
-        assertTrue(slice.contains(19));   // Before end
-        assertFalse(slice.contains(20));  // At end (exclusive)
-        assertFalse(slice.contains(21));  // After end
+        assertFalse(slice.contains(9)); // Before start
+        assertTrue(slice.contains(10)); // At start (inclusive)
+        assertTrue(slice.contains(15)); // In middle
+        assertTrue(slice.contains(19)); // Before end
+        assertFalse(slice.contains(20)); // At end (exclusive)
+        assertFalse(slice.contains(21)); // After end
     }
 
     @Test
     void testContains_SingleElement() {
         AmplitudeSlice slice = new AmplitudeSlice(5, 6);
-        
+
         assertFalse(slice.contains(4));
         assertTrue(slice.contains(5));
         assertFalse(slice.contains(6));
@@ -93,7 +89,7 @@ class AmplitudeSliceTest {
     @Test
     void testContains_EdgeCases() {
         AmplitudeSlice slice = new AmplitudeSlice(0, 1);
-        
+
         assertTrue(slice.contains(0));
         assertFalse(slice.contains(1));
         assertFalse(slice.contains(-1));
@@ -103,7 +99,7 @@ class AmplitudeSliceTest {
     void testToString() {
         AmplitudeSlice slice = new AmplitudeSlice(10, 25);
         String str = slice.toString();
-        
+
         assertTrue(str.contains("[10, 25)"));
         assertTrue(str.contains("length=15"));
     }
@@ -112,7 +108,7 @@ class AmplitudeSliceTest {
     void testToString_SingleElement() {
         AmplitudeSlice slice = new AmplitudeSlice(0, 1);
         String str = slice.toString();
-        
+
         assertTrue(str.contains("[0, 1)"));
         assertTrue(str.contains("length=1"));
     }
@@ -123,10 +119,10 @@ class AmplitudeSliceTest {
         AmplitudeSlice slice2 = new AmplitudeSlice(10, 20);
         AmplitudeSlice slice3 = new AmplitudeSlice(10, 21);
         AmplitudeSlice slice4 = new AmplitudeSlice(11, 20);
-        
+
         assertEquals(slice1, slice2);
         assertEquals(slice1.hashCode(), slice2.hashCode());
-        
+
         assertNotEquals(slice1, slice3);
         assertNotEquals(slice1, slice4);
     }
@@ -134,13 +130,13 @@ class AmplitudeSliceTest {
     @Test
     void testImmutability() {
         AmplitudeSlice slice = new AmplitudeSlice(5, 15);
-        
+
         // Verify that the record is immutable by checking that
         // the values cannot be changed after construction
         assertEquals(5, slice.start());
         assertEquals(15, slice.end());
         assertEquals(10, slice.length());
-        
+
         // These values should remain constant
         assertEquals(5, slice.start());
         assertEquals(15, slice.end());

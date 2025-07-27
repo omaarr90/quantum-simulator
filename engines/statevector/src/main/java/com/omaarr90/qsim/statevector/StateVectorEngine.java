@@ -273,22 +273,24 @@ public final class StateVectorEngine implements SimulatorEngine {
         int numStates = 1 << numQubits;
         double[] real = new double[numStates];
         double[] imag = new double[numStates];
-        
+
         for (int i = 0; i < numStates; i++) {
             real[i] = amplitudes[2 * i];
             imag[i] = amplitudes[2 * i + 1];
         }
-        
+
         try {
             // Use parallel kernel - create a temporary StateVector for size calculation
             StateVector tempStateVector = StateVector.allocate(numQubits);
-            ParallelSweep.forEachSlice(tempStateVector, numQubits, 
-                slice -> SingleQubitKernels.applyHadamard(real, imag, numQubits, qubit, slice));
+            ParallelSweep.forEachSlice(
+                    tempStateVector,
+                    numQubits,
+                    slice -> SingleQubitKernels.applyHadamard(real, imag, numQubits, qubit, slice));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException("Gate application was interrupted", e);
         }
-        
+
         // Convert back to interleaved format
         for (int i = 0; i < numStates; i++) {
             amplitudes[2 * i] = real[i];
@@ -301,22 +303,24 @@ public final class StateVectorEngine implements SimulatorEngine {
         int numStates = 1 << numQubits;
         double[] real = new double[numStates];
         double[] imag = new double[numStates];
-        
+
         for (int i = 0; i < numStates; i++) {
             real[i] = amplitudes[2 * i];
             imag[i] = amplitudes[2 * i + 1];
         }
-        
+
         try {
             // Use parallel kernel - create a temporary StateVector for size calculation
             StateVector tempStateVector = StateVector.allocate(numQubits);
-            ParallelSweep.forEachSlice(tempStateVector, numQubits, 
-                slice -> SingleQubitKernels.applyPauliX(real, imag, numQubits, qubit, slice));
+            ParallelSweep.forEachSlice(
+                    tempStateVector,
+                    numQubits,
+                    slice -> SingleQubitKernels.applyPauliX(real, imag, numQubits, qubit, slice));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException("Gate application was interrupted", e);
         }
-        
+
         // Convert back to interleaved format
         for (int i = 0; i < numStates; i++) {
             amplitudes[2 * i] = real[i];
@@ -329,22 +333,25 @@ public final class StateVectorEngine implements SimulatorEngine {
         int numStates = 1 << numQubits;
         double[] real = new double[numStates];
         double[] imag = new double[numStates];
-        
+
         for (int i = 0; i < numStates; i++) {
             real[i] = amplitudes[2 * i];
             imag[i] = amplitudes[2 * i + 1];
         }
-        
+
         try {
             // Use parallel kernel - create a temporary StateVector for size calculation
             StateVector tempStateVector = StateVector.allocate(numQubits);
-            ParallelSweep.forEachSlice(tempStateVector, numQubits, 
-                slice -> TwoQubitKernels.applyCX(real, imag, numQubits, control, target, slice));
+            ParallelSweep.forEachSlice(
+                    tempStateVector,
+                    numQubits,
+                    slice ->
+                            TwoQubitKernels.applyCX(real, imag, numQubits, control, target, slice));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException("Gate application was interrupted", e);
         }
-        
+
         // Convert back to interleaved format
         for (int i = 0; i < numStates; i++) {
             amplitudes[2 * i] = real[i];

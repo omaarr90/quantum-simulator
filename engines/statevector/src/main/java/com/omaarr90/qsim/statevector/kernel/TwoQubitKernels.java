@@ -185,10 +185,11 @@ public final class TwoQubitKernels {
     // Slice-aware versions for parallel execution
 
     /**
-     * Applies the Controlled-X (CNOT) gate to the specified control and target qubits within an amplitude slice.
+     * Applies the Controlled-X (CNOT) gate to the specified control and target qubits within an
+     * amplitude slice.
      *
-     * <p>This method is optimized for parallel execution by only processing states
-     * within the specified slice boundaries.
+     * <p>This method is optimized for parallel execution by only processing states within the
+     * specified slice boundaries.
      *
      * @param real the real parts of the state vector amplitudes
      * @param imag the imaginary parts of the state vector amplitudes
@@ -199,7 +200,12 @@ public final class TwoQubitKernels {
      * @throws IllegalArgumentException if control or target qubits are out of range or equal
      */
     public static void applyCX(
-            double[] real, double[] imag, int numQubits, int control, int target, AmplitudeSlice slice) {
+            double[] real,
+            double[] imag,
+            int numQubits,
+            int control,
+            int target,
+            AmplitudeSlice slice) {
         validateTwoQubitInputs(real, imag, numQubits, control, target);
 
         final int controlMask = 1 << control;
@@ -209,7 +215,7 @@ public final class TwoQubitKernels {
         for (int i = slice.start(); i < slice.end(); i++) {
             if ((i & controlMask) != 0 && (i & targetMask) == 0) {
                 final int flippedState = i | targetMask;
-                
+
                 // Only swap if the flipped state is also within bounds
                 if (flippedState < slice.end()) {
                     // Swap amplitudes
@@ -225,7 +231,8 @@ public final class TwoQubitKernels {
     }
 
     /**
-     * Applies the Controlled-Z gate to the specified control and target qubits within an amplitude slice.
+     * Applies the Controlled-Z gate to the specified control and target qubits within an amplitude
+     * slice.
      *
      * @param real the real parts of the state vector amplitudes
      * @param imag the imaginary parts of the state vector amplitudes
@@ -236,7 +243,12 @@ public final class TwoQubitKernels {
      * @throws IllegalArgumentException if control or target qubits are out of range or equal
      */
     public static void applyCZ(
-            double[] real, double[] imag, int numQubits, int control, int target, AmplitudeSlice slice) {
+            double[] real,
+            double[] imag,
+            int numQubits,
+            int control,
+            int target,
+            AmplitudeSlice slice) {
         validateTwoQubitInputs(real, imag, numQubits, control, target);
 
         final int controlMask = 1 << control;
@@ -265,18 +277,24 @@ public final class TwoQubitKernels {
      * @throws IllegalArgumentException if control or target qubits are out of range or equal
      */
     public static void applySWAP(
-            double[] real, double[] imag, int numQubits, int control, int target, AmplitudeSlice slice) {
+            double[] real,
+            double[] imag,
+            int numQubits,
+            int control,
+            int target,
+            AmplitudeSlice slice) {
         validateTwoQubitInputs(real, imag, numQubits, control, target);
 
         final int controlMask = 1 << control;
         final int targetMask = 1 << target;
 
-        // Process only states within the slice where control=0,target=1 and swap with control=1,target=0
+        // Process only states within the slice where control=0,target=1 and swap with
+        // control=1,target=0
         for (int i = slice.start(); i < slice.end(); i++) {
             if ((i & controlMask) == 0 && (i & targetMask) != 0) {
                 // Calculate the swapped state: control=1, target=0
                 final int swappedState = (i | controlMask) & ~targetMask;
-                
+
                 // Only swap if the swapped state is also within bounds
                 if (swappedState >= slice.start() && swappedState < slice.end()) {
                     // Swap amplitudes

@@ -1,5 +1,6 @@
 package com.omaarr90.qsim.statevector.kernel;
 
+import com.omaarr90.qsim.statevector.parallel.AmplitudeSlice;
 import jdk.incubator.vector.DoubleVector;
 import jdk.incubator.vector.VectorSpecies;
 
@@ -243,6 +244,230 @@ public final class SingleQubitKernels {
 
         // Apply phase to |0⟩ and |1⟩ states separately
         for (int state = 0; state < numStates; state++) {
+            if ((state & qubitMask) == 0) {
+                // |0⟩ state: multiply by e^(-iθ/2) = cos(θ/2) - i sin(θ/2)
+                applyPhase(real, imag, state, cosHalf, -sinHalf);
+            } else {
+                // |1⟩ state: multiply by e^(iθ/2) = cos(θ/2) + i sin(θ/2)
+                applyPhase(real, imag, state, cosHalf, sinHalf);
+            }
+        }
+    }
+
+    // Slice-aware versions for parallel execution
+
+    /**
+     * Applies the Hadamard gate to the specified qubit within an amplitude slice.
+     *
+     * <p>This method is optimized for parallel execution by only processing states
+     * within the specified slice boundaries.
+     *
+     * @param real the real parts of the state vector amplitudes
+     * @param imag the imaginary parts of the state vector amplitudes
+     * @param numQubits the total number of qubits in the system
+     * @param targetQubit the index of the qubit to apply the gate to (0-based)
+     * @param slice the amplitude slice to process
+     * @throws IllegalArgumentException if targetQubit is out of range
+     */
+    public static void applyHadamard(double[] real, double[] imag, int numQubits, int targetQubit, AmplitudeSlice slice) {
+        validateInputs(real, imag, numQubits, targetQubit);
+
+        final int qubitMask = 1 << targetQubit;
+        final int blockStep = 2 * qubitMask;
+
+        // Find the first state within the slice that needs processing
+        int startState = (slice.start() / blockStep) * blockStep;
+        if (startState < slice.start()) {
+            startState += blockStep;
+        }
+
+        // Process states in pairs within the slice boundaries
+        for (int state = startState; state < slice.end() && state < (1 << numQubits); state += blockStep) {
+            // Only process if both the base state and flipped state are within bounds
+            int flippedState = state | qubitMask;
+            if (state >= slice.start() && flippedState < slice.end()) {
+                applyHadamardBlock(real, imag, state, qubitMask);
+            }
+        }
+    }
+
+    /**
+     * Applies the Pauli-X gate to the specified qubit within an amplitude slice.
+     *
+     * @param real the real parts of the state vector amplitudes
+     * @param imag the imaginary parts of the state vector amplitudes
+     * @param numQubits the total number of qubits in the system
+     * @param targetQubit the index of the qubit to apply the gate to (0-based)
+     * @param slice the amplitude slice to process
+     * @throws IllegalArgumentException if targetQubit is out of range
+     */
+    public static void applyPauliX(double[] real, double[] imag, int numQubits, int targetQubit, AmplitudeSlice slice) {
+        validateInputs(real, imag, numQubits, targetQubit);
+
+        final int qubitMask = 1 << targetQubit;
+        final int blockStep = 2 * qubitMask;
+
+        // Find the first state within the slice that needs processing
+        int startState = (slice.start() / blockStep) * blockStep;
+        if (startState < slice.start()) {
+            startState += blockStep;
+        }
+
+        // Process states in pairs within the slice boundaries
+        for (int state = startState; state < slice.end() && state < (1 << numQubits); state += blockStep) {
+            // Only process if both the base state and flipped state are within bounds
+            int flippedState = state | qubitMask;
+            if (state >= slice.start() && flippedState < slice.end()) {
+                applyPauliXBlock(real, imag, state, qubitMask);
+            }
+        }
+    }
+
+    /**
+     * Applies the Pauli-Y gate to the specified qubit within an amplitude slice.
+     *
+     * @param real the real parts of the state vector amplitudes
+     * @param imag the imaginary parts of the state vector amplitudes
+     * @param numQubits the total number of qubits in the system
+     * @param targetQubit the index of the qubit to apply the gate to (0-based)
+     * @param slice the amplitude slice to process
+     * @throws IllegalArgumentException if targetQubit is out of range
+     */
+    public static void applyPauliY(double[] real, double[] imag, int numQubits, int targetQubit, AmplitudeSlice slice) {
+        validateInputs(real, imag, numQubits, targetQubit);
+
+        final int qubitMask = 1 << targetQubit;
+        final int blockStep = 2 * qubitMask;
+
+        // Find the first state within the slice that needs processing
+        int startState = (slice.start() / blockStep) * blockStep;
+        if (startState < slice.start()) {
+            startState += blockStep;
+        }
+
+        // Process states in pairs within the slice boundaries
+        for (int state = startState; state < slice.end() && state < (1 << numQubits); state += blockStep) {
+            // Only process if both the base state and flipped state are within bounds
+            int flippedState = state | qubitMask;
+            if (state >= slice.start() && flippedState < slice.end()) {
+                applyPauliYBlock(real, imag, state, qubitMask);
+            }
+        }
+    }
+
+    /**
+     * Applies the Pauli-Z gate to the specified qubit within an amplitude slice.
+     *
+     * @param real the real parts of the state vector amplitudes
+     * @param imag the imaginary parts of the state vector amplitudes
+     * @param numQubits the total number of qubits in the system
+     * @param targetQubit the index of the qubit to apply the gate to (0-based)
+     * @param slice the amplitude slice to process
+     * @throws IllegalArgumentException if targetQubit is out of range
+     */
+    public static void applyPauliZ(double[] real, double[] imag, int numQubits, int targetQubit, AmplitudeSlice slice) {
+        validateInputs(real, imag, numQubits, targetQubit);
+
+        final int qubitMask = 1 << targetQubit;
+
+        // Process only states within the slice that have the target qubit set to |1⟩
+        for (int state = slice.start(); state < slice.end(); state++) {
+            if ((state & qubitMask) != 0) {
+                applyPauliZBlock(real, imag, state, qubitMask);
+            }
+        }
+    }
+
+    /**
+     * Applies the RX rotation gate to the specified qubit within an amplitude slice.
+     *
+     * @param real the real parts of the state vector amplitudes
+     * @param imag the imaginary parts of the state vector amplitudes
+     * @param numQubits the total number of qubits in the system
+     * @param targetQubit the index of the qubit to apply the gate to (0-based)
+     * @param theta the rotation angle in radians
+     * @param slice the amplitude slice to process
+     * @throws IllegalArgumentException if targetQubit is out of range
+     */
+    public static void applyRX(double[] real, double[] imag, int numQubits, int targetQubit, double theta, AmplitudeSlice slice) {
+        validateInputs(real, imag, numQubits, targetQubit);
+
+        final double cosHalf = Math.cos(theta / 2.0);
+        final double sinHalf = Math.sin(theta / 2.0);
+        final int qubitMask = 1 << targetQubit;
+        final int blockStep = 2 * qubitMask;
+
+        // Find the first state within the slice that needs processing
+        int startState = (slice.start() / blockStep) * blockStep;
+        if (startState < slice.start()) {
+            startState += blockStep;
+        }
+
+        // Process states in pairs within the slice boundaries
+        for (int state = startState; state < slice.end() && state < (1 << numQubits); state += blockStep) {
+            // Only process if both the base state and flipped state are within bounds
+            int flippedState = state | qubitMask;
+            if (state >= slice.start() && flippedState < slice.end()) {
+                applyRXBlock(real, imag, state, qubitMask, cosHalf, sinHalf);
+            }
+        }
+    }
+
+    /**
+     * Applies the RY rotation gate to the specified qubit within an amplitude slice.
+     *
+     * @param real the real parts of the state vector amplitudes
+     * @param imag the imaginary parts of the state vector amplitudes
+     * @param numQubits the total number of qubits in the system
+     * @param targetQubit the index of the qubit to apply the gate to (0-based)
+     * @param theta the rotation angle in radians
+     * @param slice the amplitude slice to process
+     * @throws IllegalArgumentException if targetQubit is out of range
+     */
+    public static void applyRY(double[] real, double[] imag, int numQubits, int targetQubit, double theta, AmplitudeSlice slice) {
+        validateInputs(real, imag, numQubits, targetQubit);
+
+        final double cosHalf = Math.cos(theta / 2.0);
+        final double sinHalf = Math.sin(theta / 2.0);
+        final int qubitMask = 1 << targetQubit;
+        final int blockStep = 2 * qubitMask;
+
+        // Find the first state within the slice that needs processing
+        int startState = (slice.start() / blockStep) * blockStep;
+        if (startState < slice.start()) {
+            startState += blockStep;
+        }
+
+        // Process states in pairs within the slice boundaries
+        for (int state = startState; state < slice.end() && state < (1 << numQubits); state += blockStep) {
+            // Only process if both the base state and flipped state are within bounds
+            int flippedState = state | qubitMask;
+            if (state >= slice.start() && flippedState < slice.end()) {
+                applyRYBlock(real, imag, state, qubitMask, cosHalf, sinHalf);
+            }
+        }
+    }
+
+    /**
+     * Applies the RZ rotation gate to the specified qubit within an amplitude slice.
+     *
+     * @param real the real parts of the state vector amplitudes
+     * @param imag the imaginary parts of the state vector amplitudes
+     * @param numQubits the total number of qubits in the system
+     * @param targetQubit the index of the qubit to apply the gate to (0-based)
+     * @param theta the rotation angle in radians
+     * @param slice the amplitude slice to process
+     * @throws IllegalArgumentException if targetQubit is out of range
+     */
+    public static void applyRZ(double[] real, double[] imag, int numQubits, int targetQubit, double theta, AmplitudeSlice slice) {
+        validateInputs(real, imag, numQubits, targetQubit);
+
+        final double cosHalf = Math.cos(theta / 2.0);
+        final double sinHalf = Math.sin(theta / 2.0);
+        final int qubitMask = 1 << targetQubit;
+
+        // Process only states within the slice
+        for (int state = slice.start(); state < slice.end(); state++) {
             if ((state & qubitMask) == 0) {
                 // |0⟩ state: multiply by e^(-iθ/2) = cos(θ/2) - i sin(θ/2)
                 applyPhase(real, imag, state, cosHalf, -sinHalf);

@@ -6,6 +6,10 @@ import com.omaarr90.core.engine.SimulatorEngine;
 import com.omaarr90.core.engine.result.SimulationResult;
 import com.omaarr90.core.engine.result.StateVectorResult;
 import com.omaarr90.core.gate.GateType;
+import com.omaarr90.core.statevector.StateVector;
+import com.omaarr90.qsim.statevector.kernel.SingleQubitKernels;
+import com.omaarr90.qsim.statevector.kernel.TwoQubitKernels;
+import com.omaarr90.qsim.statevector.parallel.ParallelSweep;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
@@ -265,80 +269,86 @@ public final class StateVectorEngine implements SimulatorEngine {
     }
 
     private void applyHadamard(double[] amplitudes, int qubit, int numQubits) {
+        // Convert interleaved format to separate real/imag arrays
         int numStates = 1 << numQubits;
-        double[] newAmplitudes = new double[2 * numStates];
-
-        for (int state = 0; state < numStates; state++) {
-            int realIdx = 2 * state;
-            int imagIdx = 2 * state + 1;
-
-            double real = amplitudes[realIdx];
-            double imag = amplitudes[imagIdx];
-
-            if ((state & (1 << qubit)) == 0) {
-                // |0⟩ component: (|0⟩ + |1⟩) / √2
-                int flippedState = state | (1 << qubit);
-                int flippedRealIdx = 2 * flippedState;
-                int flippedImagIdx = 2 * flippedState + 1;
-
-                double flippedReal = amplitudes[flippedRealIdx];
-                double flippedImag = amplitudes[flippedImagIdx];
-
-                newAmplitudes[realIdx] = (real + flippedReal) / Math.sqrt(2);
-                newAmplitudes[imagIdx] = (imag + flippedImag) / Math.sqrt(2);
-                newAmplitudes[flippedRealIdx] = (real - flippedReal) / Math.sqrt(2);
-                newAmplitudes[flippedImagIdx] = (imag - flippedImag) / Math.sqrt(2);
-            }
+        double[] real = new double[numStates];
+        double[] imag = new double[numStates];
+        
+        for (int i = 0; i < numStates; i++) {
+            real[i] = amplitudes[2 * i];
+            imag[i] = amplitudes[2 * i + 1];
         }
-
-        System.arraycopy(newAmplitudes, 0, amplitudes, 0, amplitudes.length);
+        
+        try {
+            // Use parallel kernel - create a temporary StateVector for size calculation
+            StateVector tempStateVector = StateVector.allocate(numQubits);
+            ParallelSweep.forEachSlice(tempStateVector, numQubits, 
+                slice -> SingleQubitKernels.applyHadamard(real, imag, numQubits, qubit, slice));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Gate application was interrupted", e);
+        }
+        
+        // Convert back to interleaved format
+        for (int i = 0; i < numStates; i++) {
+            amplitudes[2 * i] = real[i];
+            amplitudes[2 * i + 1] = imag[i];
+        }
     }
 
     private void applyPauliX(double[] amplitudes, int qubit, int numQubits) {
+        // Convert interleaved format to separate real/imag arrays
         int numStates = 1 << numQubits;
-
-        for (int state = 0; state < numStates; state++) {
-            if ((state & (1 << qubit)) == 0) {
-                // Swap amplitudes of |...0...⟩ and |...1...⟩
-                int flippedState = state | (1 << qubit);
-
-                int realIdx = 2 * state;
-                int imagIdx = 2 * state + 1;
-                int flippedRealIdx = 2 * flippedState;
-                int flippedImagIdx = 2 * flippedState + 1;
-
-                double tempReal = amplitudes[realIdx];
-                double tempImag = amplitudes[imagIdx];
-
-                amplitudes[realIdx] = amplitudes[flippedRealIdx];
-                amplitudes[imagIdx] = amplitudes[flippedImagIdx];
-                amplitudes[flippedRealIdx] = tempReal;
-                amplitudes[flippedImagIdx] = tempImag;
-            }
+        double[] real = new double[numStates];
+        double[] imag = new double[numStates];
+        
+        for (int i = 0; i < numStates; i++) {
+            real[i] = amplitudes[2 * i];
+            imag[i] = amplitudes[2 * i + 1];
+        }
+        
+        try {
+            // Use parallel kernel - create a temporary StateVector for size calculation
+            StateVector tempStateVector = StateVector.allocate(numQubits);
+            ParallelSweep.forEachSlice(tempStateVector, numQubits, 
+                slice -> SingleQubitKernels.applyPauliX(real, imag, numQubits, qubit, slice));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Gate application was interrupted", e);
+        }
+        
+        // Convert back to interleaved format
+        for (int i = 0; i < numStates; i++) {
+            amplitudes[2 * i] = real[i];
+            amplitudes[2 * i + 1] = imag[i];
         }
     }
 
     private void applyCNOT(double[] amplitudes, int control, int target, int numQubits) {
+        // Convert interleaved format to separate real/imag arrays
         int numStates = 1 << numQubits;
-
-        for (int state = 0; state < numStates; state++) {
-            // Apply X to target only if control is |1⟩
-            if ((state & (1 << control)) != 0 && (state & (1 << target)) == 0) {
-                int flippedState = state | (1 << target);
-
-                int realIdx = 2 * state;
-                int imagIdx = 2 * state + 1;
-                int flippedRealIdx = 2 * flippedState;
-                int flippedImagIdx = 2 * flippedState + 1;
-
-                double tempReal = amplitudes[realIdx];
-                double tempImag = amplitudes[imagIdx];
-
-                amplitudes[realIdx] = amplitudes[flippedRealIdx];
-                amplitudes[imagIdx] = amplitudes[flippedImagIdx];
-                amplitudes[flippedRealIdx] = tempReal;
-                amplitudes[flippedImagIdx] = tempImag;
-            }
+        double[] real = new double[numStates];
+        double[] imag = new double[numStates];
+        
+        for (int i = 0; i < numStates; i++) {
+            real[i] = amplitudes[2 * i];
+            imag[i] = amplitudes[2 * i + 1];
+        }
+        
+        try {
+            // Use parallel kernel - create a temporary StateVector for size calculation
+            StateVector tempStateVector = StateVector.allocate(numQubits);
+            ParallelSweep.forEachSlice(tempStateVector, numQubits, 
+                slice -> TwoQubitKernels.applyCX(real, imag, numQubits, control, target, slice));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Gate application was interrupted", e);
+        }
+        
+        // Convert back to interleaved format
+        for (int i = 0; i < numStates; i++) {
+            amplitudes[2 * i] = real[i];
+            amplitudes[2 * i + 1] = imag[i];
         }
     }
 

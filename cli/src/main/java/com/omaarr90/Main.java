@@ -10,39 +10,60 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.concurrent.Callable;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.ParseTree;
+import picocli.CommandLine;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
 
 /**
- * Main entry point for the quantum simulator CLI. Supports running circuits from OpenQASM files or
- * using built-in examples.
+ * Main entry point for the quantum simulator CLI.
+ *
+ * <p>This is the root command that supports both the legacy demo functionality and the new
+ * subcommand-based interface for executing quantum circuits.
  */
-public class Main {
+@Command(
+        name = "qsim",
+        description = "Quantum Circuit Simulator",
+        mixinStandardHelpOptions = true,
+        subcommands = {RunCommand.class},
+        version = "qsim 1.0")
+public class Main implements Callable<Integer> {
+
+    @Option(
+            names = {"--demo"},
+            description = "Run the default demo circuit")
+    private boolean demo;
+
+    @Option(
+            names = {"-f", "--file"},
+            paramLabel = "<file.qasm>",
+            description = "Parse and display OpenQASM file (legacy mode)")
+    private Path legacyFile;
+
+    @Option(
+            names = {"--debug-parse"},
+            description = "Show parse tree output (legacy mode)")
+    private boolean debugParse;
 
     public static void main(String[] args) {
-        if (args.length == 0) {
+        int exitCode = new CommandLine(new Main()).execute(args);
+        System.exit(exitCode);
+    }
+
+    @Override
+    public Integer call() {
+        if (demo) {
             runDefaultDemo();
-        } else if (args.length >= 2 && "run".equals(args[0]) && "-f".equals(args[1])) {
-            if (args.length < 3) {
-                System.err.println("Error: Missing file path after -f flag");
-                printUsage();
-                System.exit(1);
-            }
-            boolean debugParse = args.length > 3 && "--debug-parse".equals(args[3]);
-            runQasmFile(args[2], debugParse);
-        } else if (args.length >= 2 && "--debug-parse".equals(args[0]) && "-f".equals(args[1])) {
-            if (args.length < 3) {
-                System.err.println("Error: Missing file path after -f flag");
-                printUsage();
-                System.exit(1);
-            }
-            runQasmFile(args[2], true);
-        } else if (args.length == 1 && ("--help".equals(args[0]) || "-h".equals(args[0]))) {
-            printUsage();
+            return 0;
+        } else if (legacyFile != null) {
+            runQasmFile(legacyFile.toString(), debugParse);
+            return 0;
         } else {
-            System.err.println("Error: Invalid arguments");
-            printUsage();
-            System.exit(1);
+            // No options specified, run default demo for backward compatibility
+            runDefaultDemo();
+            return 0;
         }
     }
 
@@ -140,35 +161,5 @@ public class Main {
                                     System.out.println(
                                             "  Qubit " + qubit + " -> Classical bit " + cbit));
         }
-    }
-
-    private static void printUsage() {
-        System.out.println("Quantum Simulator CLI");
-        System.out.println("====================");
-        System.out.println();
-        System.out.println("Usage:");
-        System.out.println("  qsim                           Run default demo circuit");
-        System.out.println("  qsim run -f <file>             Run OpenQASM file");
-        System.out.println(
-                "  qsim run -f <file> --debug-parse   Run OpenQASM file with parse tree output");
-        System.out.println(
-                "  qsim --debug-parse -f <file>   Run OpenQASM file with parse tree output");
-        System.out.println("  qsim --help, -h                Show this help message");
-        System.out.println();
-        System.out.println("Examples:");
-        System.out.println("  qsim run -f bell.qasm          Parse and display Bell state circuit");
-        System.out.println("  qsim run -f ghz.qasm           Parse and display GHZ state circuit");
-        System.out.println("  qsim --debug-parse -f bell.qasm   Show parse tree for Bell circuit");
-        System.out.println();
-        System.out.println("Supported OpenQASM 3 features:");
-        System.out.println("  - Qubit declarations: qreg q[N]; or qubit[N] q;");
-        System.out.println("  - Classical declarations: creg c[N];");
-        System.out.println("  - Single-qubit gates: h, x, y, z, s, sdg, t, tdg");
-        System.out.println("  - Two-qubit gates: cx/cnot, cz, swap");
-        System.out.println("  - Parametrized rotations: rx(θ), ry(θ), rz(θ)");
-        System.out.println("  - Arithmetic expressions: π, π/2, π/4, etc.");
-        System.out.println("  - Multiple statements per line: h q[0]; cx q[0], q[1];");
-        System.out.println("  - Measurements: measure q[i] -> c[i];");
-        System.out.println("  - Barriers: barrier; or barrier q[0], q[1];");
     }
 }

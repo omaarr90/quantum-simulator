@@ -37,8 +37,9 @@ public record StateVectorResult(
         if (counts == null) {
             throw new IllegalArgumentException("Counts map cannot be null");
         }
-        if (totalShots <= 0) {
-            throw new IllegalArgumentException("Total shots must be positive: " + totalShots);
+        if (totalShots < 0 || (totalShots == 0 && !counts.isEmpty())) {
+            throw new IllegalArgumentException(
+                    "Total shots must be positive when measurements are present: " + totalShots);
         }
         if (gateCount < 0) {
             throw new IllegalArgumentException("Gate count must be non-negative: " + gateCount);

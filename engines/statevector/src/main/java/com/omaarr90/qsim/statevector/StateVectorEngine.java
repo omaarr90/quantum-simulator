@@ -212,7 +212,9 @@ public final class StateVectorEngine implements SimulatorEngine {
 
         // Perform multiple shots if circuit has measurements
         Map<String, Long> aggregatedCounts = new HashMap<>();
+        int actualShots = 0;
         if (circuit.hasMeasurements()) {
+            actualShots = shots;
             for (int shot = 0; shot < shots; shot++) {
                 // Create fresh copy for this shot
                 double[] amplitudes = baseAmplitudes.clone();
@@ -229,7 +231,8 @@ public final class StateVectorEngine implements SimulatorEngine {
         }
 
         Duration elapsed = Duration.between(startTime, Instant.now());
-        return new StateVectorResult(baseAmplitudes, aggregatedCounts, shots, gateCount, elapsed);
+        return new StateVectorResult(
+                baseAmplitudes, aggregatedCounts, actualShots, gateCount, elapsed);
     }
 
     @Override

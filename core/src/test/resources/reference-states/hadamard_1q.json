@@ -1,0 +1,16 @@
+{
+  "metadata": {
+    "name": "hadamard_1q",
+    "description": "Single qubit Hadamard |+\u27e9",
+    "num_qubits": 1,
+    "num_gates": 1,
+    "qiskit_version": "2.1.1",
+    "circuit_qasm": "   \u250c\u2500\u2500\u2500\u2510\nq: \u2524 H \u251c\n   \u2514\u2500\u2500\u2500\u2518"
+  },
+  "amplitudes": [
+    0.7071067811865476,
+    0.0,
+    0.7071067811865475,
+    0.0
+  ]
+}

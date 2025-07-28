@@ -1,0 +1,20 @@
+{
+  "metadata": {
+    "name": "identity_2q",
+    "description": "2-qubit identity circuit |00\u27e9",
+    "num_qubits": 2,
+    "num_gates": 0,
+    "qiskit_version": "2.1.1",
+    "circuit_qasm": "     \nq_0: \n     \nq_1: \n     "
+  },
+  "amplitudes": [
+    1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ]
+}

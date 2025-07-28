@@ -1,0 +1,28 @@
+{
+  "metadata": {
+    "name": "toffoli_test",
+    "description": "Toffoli gate with superposition controls",
+    "num_qubits": 3,
+    "num_gates": 3,
+    "qiskit_version": "2.1.1",
+    "circuit_qasm": "     \u250c\u2500\u2500\u2500\u2510     \nq_0: \u2524 H \u251c\u2500\u2500\u25a0\u2500\u2500\n     \u251c\u2500\u2500\u2500\u2524  \u2502  \nq_1: \u2524 H \u251c\u2500\u2500\u25a0\u2500\u2500\n     \u2514\u2500\u2500\u2500\u2518\u250c\u2500\u2534\u2500\u2510\nq_2: \u2500\u2500\u2500\u2500\u2500\u2524 X \u251c\n          \u2514\u2500\u2500\u2500\u2518"
+  },
+  "amplitudes": [
+    0.5000000000000001,
+    0.0,
+    0.5,
+    0.0,
+    0.5,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.4999999999999999,
+    0.0
+  ]
+}

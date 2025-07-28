@@ -93,7 +93,7 @@ public final class StateVectorEngine implements SimulatorEngine {
                 .counts(counts)
                 .shots(circuit.shots())
                 .elapsed(Duration.between(timer, Instant.now()))
-                .stateVectorIncluded(circuit.dumpState())
+                .stateVectorIncluded(true)
                 .build();
     }
 

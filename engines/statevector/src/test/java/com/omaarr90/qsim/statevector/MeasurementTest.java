@@ -6,6 +6,8 @@ import com.omaarr90.core.circuit.Circuit;
 import com.omaarr90.core.circuit.CircuitBuilder;
 import com.omaarr90.core.engine.result.StateVectorResult;
 import java.util.Map;
+import java.util.random.RandomGenerator;
+import java.util.random.RandomGeneratorFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -24,6 +26,9 @@ class MeasurementTest {
 
     private StateVectorEngine engine;
 
+    private final RandomGenerator rng =
+            RandomGeneratorFactory.of("SplittableRandom").create(System.currentTimeMillis());
+
     @BeforeEach
     void setUp() {
         engine = new StateVectorEngine();
@@ -39,7 +44,7 @@ class MeasurementTest {
         double[] originalAmplitudes = amplitudes.clone();
 
         // Act
-        int result = engine.measure(amplitudes, 0, 1);
+        int result = engine.measure(amplitudes, 0, 1, rng);
 
         // Assert
         assertEquals(0, result, "Measuring |0⟩ should always return 0");
@@ -61,7 +66,7 @@ class MeasurementTest {
         double[] amplitudes = {0.0, 0.0, 1.0, 0.0}; // |1⟩ for 1 qubit
 
         // Act
-        int result = engine.measure(amplitudes, 0, 1);
+        int result = engine.measure(amplitudes, 0, 1, rng);
 
         // Assert
         assertEquals(1, result, "Measuring |1⟩ should always return 1");
@@ -154,7 +159,7 @@ class MeasurementTest {
         double[] amplitudes = {1.0 / Math.sqrt(2), 0.0, 1.0 / Math.sqrt(2), 0.0}; // |+⟩
 
         // Act
-        int result = engine.measure(amplitudes, 0, 1);
+        int result = engine.measure(amplitudes, 0, 1, rng);
 
         // Assert: Check norm preservation
         double norm = 0.0;
@@ -186,22 +191,22 @@ class MeasurementTest {
     void testMeasureAllComputationalBasis() {
         // Test |00⟩
         double[] amplitudes00 = {1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}; // |00⟩
-        int result00 = engine.measureAll(amplitudes00, 2);
+        int result00 = engine.measureAll(amplitudes00, 2, rng);
         assertEquals(0, result00, "measureAll on |00⟩ should return 0");
 
         // Test |01⟩
         double[] amplitudes01 = {0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0}; // |01⟩
-        int result01 = engine.measureAll(amplitudes01, 2);
+        int result01 = engine.measureAll(amplitudes01, 2, rng);
         assertEquals(1, result01, "measureAll on |01⟩ should return 1");
 
         // Test |10⟩
         double[] amplitudes10 = {0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0}; // |10⟩
-        int result10 = engine.measureAll(amplitudes10, 2);
+        int result10 = engine.measureAll(amplitudes10, 2, rng);
         assertEquals(2, result10, "measureAll on |10⟩ should return 2");
 
         // Test |11⟩
         double[] amplitudes11 = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0}; // |11⟩
-        int result11 = engine.measureAll(amplitudes11, 2);
+        int result11 = engine.measureAll(amplitudes11, 2, rng);
         assertEquals(3, result11, "measureAll on |11⟩ should return 3");
     }
 
@@ -213,19 +218,19 @@ class MeasurementTest {
         // Test invalid qubit index
         assertThrows(
                 IllegalArgumentException.class,
-                () -> engine.measure(amplitudes, -1, 1),
+                () -> engine.measure(amplitudes, -1, 1, rng),
                 "Should throw for negative qubit index");
 
         assertThrows(
                 IllegalArgumentException.class,
-                () -> engine.measure(amplitudes, 1, 1),
+                () -> engine.measure(amplitudes, 1, 1, rng),
                 "Should throw for qubit index >= numQubits");
 
         // Test zero probability measurement
         double[] zeroAmplitudes = {0.0, 0.0, 0.0, 0.0}; // All zero
         assertThrows(
                 IllegalStateException.class,
-                () -> engine.measure(zeroAmplitudes, 0, 1),
+                () -> engine.measure(zeroAmplitudes, 0, 1, rng),
                 "Should throw when measuring qubit with zero probability");
     }
 
@@ -244,13 +249,13 @@ class MeasurementTest {
         // Warm up JVM
         for (int i = 0; i < 100; i++) {
             double[] copy = amplitudes.clone();
-            engine.measure(copy, 0, numQubits);
+            engine.measure(copy, 0, numQubits, rng);
         }
 
         // Measure performance
         long startTime = System.nanoTime();
         double[] copy = amplitudes.clone();
-        engine.measure(copy, 0, numQubits);
+        engine.measure(copy, 0, numQubits, rng);
         long endTime = System.nanoTime();
 
         double durationMs = (endTime - startTime) / 1_000_000.0;

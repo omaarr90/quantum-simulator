@@ -35,18 +35,16 @@ import java.util.random.RandomGeneratorFactory;
 public final class StateVectorEngine implements SimulatorEngine {
 
     private static final String ENGINE_ID = "statevector";
-    private static final RandomGenerator RANDOM =
-            RandomGeneratorFactory.of("SplittableRandom").create();
 
     // Engine-local classical bit storage for mid-circuit measurements
     private final List<Integer> classical = new ArrayList<>();
 
-    // Seed for deterministic random number generation
-    private final long seed;
+    // Random number generator for measurements
+    private final RandomGenerator rng;
 
     /** Creates a new StateVectorEngine with default seed. */
     public StateVectorEngine() {
-        this.seed = System.currentTimeMillis();
+        this.rng = RandomGeneratorFactory.of("SplittableRandom").create(System.currentTimeMillis());
     }
 
     /**
@@ -55,7 +53,7 @@ public final class StateVectorEngine implements SimulatorEngine {
      * @param seed the seed for random number generation
      */
     public StateVectorEngine(long seed) {
-        this.seed = seed;
+        this.rng = RandomGeneratorFactory.of("SplittableRandom").create(seed);
     }
 
     @Override
@@ -63,14 +61,11 @@ public final class StateVectorEngine implements SimulatorEngine {
         Instant timer = Instant.now();
         int n = circuit.qubitCount();
         StateVector ψ = StateVector.allocate(n);
-        RandomGenerator rng = RandomGeneratorFactory.of("SplittableRandom").create(seed);
         Map<String, Integer> counts = new HashMap<>();
 
         for (GateOp op : circuit.operations()) {
             dispatch(op, ψ, rng);
         }
-
-        counts.merge(circuit.readClassicalBits(), 1, Integer::sum);
 
         // Extract amplitudes from StateVector
         double[] amplitudes = new double[2 * ψ.logicalSize()];
@@ -81,6 +76,16 @@ public final class StateVectorEngine implements SimulatorEngine {
         for (int i = 0; i < ψ.logicalSize(); i++) {
             amplitudes[2 * i] = realPart[i];
             amplitudes[2 * i + 1] = imagPart[i];
+        }
+
+        // Perform measurements if circuit has any
+        if (circuit.hasMeasurements()) {
+            Map<String, Long> measurementCounts = performMeasurements(amplitudes, circuit, n, rng);
+            for (Map.Entry<String, Long> entry : measurementCounts.entrySet()) {
+                counts.put(entry.getKey(), entry.getValue().intValue());
+            }
+        } else {
+            counts.merge(circuit.readClassicalBits(), 1, Integer::sum);
         }
 
         return StateVectorResult.builder()
@@ -118,8 +123,26 @@ public final class StateVectorEngine implements SimulatorEngine {
 
     /** Apply gate operation serially. */
     private void applyGateSerial(GateOp.Gate gate, StateVector ψ) {
-        // Implementation for serial gate application
-        // This would use the existing gate application logic
+        // Extract amplitudes from StateVector
+        int numQubits = Integer.numberOfTrailingZeros(ψ.logicalSize());
+        double[] amplitudes = new double[2 * ψ.logicalSize()];
+        double[] realPart = ψ.real();
+        double[] imagPart = ψ.imag();
+
+        // Interleave real and imaginary parts: [real0, imag0, real1, imag1, ...]
+        for (int i = 0; i < ψ.logicalSize(); i++) {
+            amplitudes[2 * i] = realPart[i];
+            amplitudes[2 * i + 1] = imagPart[i];
+        }
+
+        // Apply the gate
+        applyGate(amplitudes, gate, numQubits);
+
+        // Update StateVector with modified amplitudes
+        for (int i = 0; i < ψ.logicalSize(); i++) {
+            realPart[i] = amplitudes[2 * i];
+            imagPart[i] = amplitudes[2 * i + 1];
+        }
     }
 
     /** Apply gate operation in parallel using ParallelSweep. */
@@ -195,7 +218,8 @@ public final class StateVectorEngine implements SimulatorEngine {
                 double[] amplitudes = baseAmplitudes.clone();
 
                 // Perform measurements on the copy
-                Map<String, Long> shotCounts = performMeasurements(amplitudes, circuit, numQubits);
+                Map<String, Long> shotCounts =
+                        performMeasurements(amplitudes, circuit, numQubits, rng);
 
                 // Aggregate counts
                 for (Map.Entry<String, Long> entry : shotCounts.entrySet()) {
@@ -226,10 +250,11 @@ public final class StateVectorEngine implements SimulatorEngine {
      * @param amplitudes the state vector amplitudes (modified in place)
      * @param qubit the qubit to measure (0-based index)
      * @param numQubits total number of qubits in the system
+     * @param rng the random number generator for sampling
      * @return the measurement outcome (0 or 1)
      * @throws IllegalArgumentException if qubit index is out of range
      */
-    public int measure(double[] amplitudes, int qubit, int numQubits) {
+    public int measure(double[] amplitudes, int qubit, int numQubits, RandomGenerator rng) {
         if (qubit < 0 || qubit >= numQubits) {
             throw new IllegalArgumentException(
                     "Qubit index " + qubit + " out of range [0, " + (numQubits - 1) + "]");
@@ -256,7 +281,7 @@ public final class StateVectorEngine implements SimulatorEngine {
         }
 
         // Sample outcome
-        double r = RANDOM.nextDouble();
+        double r = rng.nextDouble();
         int outcome = (r >= p0) ? 1 : 0;
 
         // Compute renormalization factor
@@ -295,9 +320,10 @@ public final class StateVectorEngine implements SimulatorEngine {
      *
      * @param amplitudes the state vector amplitudes (modified in place)
      * @param numQubits total number of qubits in the system
+     * @param rng the random number generator for sampling
      * @return the measurement outcome as a bitstring (LSB = qubit 0)
      */
-    public int measureAll(double[] amplitudes, int numQubits) {
+    public int measureAll(double[] amplitudes, int numQubits, RandomGenerator rng) {
         int numStates = 1 << numQubits;
 
         // Calculate probabilities for all states
@@ -309,7 +335,7 @@ public final class StateVectorEngine implements SimulatorEngine {
         }
 
         // Sample from cumulative probability distribution
-        double r = RANDOM.nextDouble();
+        double r = rng.nextDouble();
         double cumulativeProb = 0.0;
         int measuredState = 0;
 
@@ -688,7 +714,7 @@ public final class StateVectorEngine implements SimulatorEngine {
     }
 
     private Map<String, Long> performMeasurements(
-            double[] amplitudes, Circuit circuit, int numQubits) {
+            double[] amplitudes, Circuit circuit, int numQubits, RandomGenerator rng) {
         if (!circuit.hasMeasurements()) {
             return Map.of();
         }
@@ -703,7 +729,7 @@ public final class StateVectorEngine implements SimulatorEngine {
         }
 
         // Sample from probability distribution
-        double randomValue = RANDOM.nextDouble();
+        double randomValue = rng.nextDouble();
         double cumulativeProb = 0.0;
         int measuredState = 0;
 

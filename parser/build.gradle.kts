@@ -7,12 +7,12 @@ dependencies {
     implementation(project(":core"))
     
     // ANTLR dependencies
-    antlr("org.antlr:antlr4:4.13.1")
-    implementation("org.antlr:antlr4-runtime:4.13.1")
+    antlr(libs.antlr4)
+    implementation(libs.antlr4.runtime)
     
     // Test dependencies
-    testImplementation("org.junit.jupiter:junit-jupiter:5.10.0")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.platform.launcher)
 }
 
 tasks.generateGrammarSource {

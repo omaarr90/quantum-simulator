@@ -1,0 +1,50 @@
+[versions]
+# Build tools and plugins
+graalvm-buildtools = "0.11.0"
+spotless = "6.25.0"
+dokka = "1.9.20"
+jmh-plugin = "0.7.2"
+
+# Testing framework
+junit-bom = "5.10.0"
+junit-jupiter = "5.10.0"
+
+# Core libraries
+jackson-databind = "2.15.2"
+antlr = "4.13.1"
+picocli = "4.7.5"
+jmh = "1.37"
+
+# Code formatting tools
+google-java-format = "1.22.0"
+ktfmt = "0.46"
+
+[libraries]
+# Testing
+junit-bom = { module = "org.junit:junit-bom", version.ref = "junit-bom" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit-jupiter" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
+
+# JSON processing
+jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson-databind" }
+
+# ANTLR parser generator
+antlr4 = { module = "org.antlr:antlr4", version.ref = "antlr" }
+antlr4-runtime = { module = "org.antlr:antlr4-runtime", version.ref = "antlr" }
+
+# Command line interface
+picocli = { module = "info.picocli:picocli", version.ref = "picocli" }
+picocli-codegen = { module = "info.picocli:picocli-codegen", version.ref = "picocli" }
+
+# Benchmarking
+jmh-core = { module = "org.openjdk.jmh:jmh-core", version.ref = "jmh" }
+jmh-generator-annprocess = { module = "org.openjdk.jmh:jmh-generator-annprocess", version.ref = "jmh" }
+
+[plugins]
+# Build and native compilation
+graalvm-buildtools = { id = "org.graalvm.buildtools.native", version.ref = "graalvm-buildtools" }
+spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
+dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
+
+# Benchmarking
+jmh = { id = "me.champeau.jmh", version.ref = "jmh-plugin" }

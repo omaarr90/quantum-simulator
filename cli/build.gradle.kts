@@ -13,12 +13,12 @@ dependencies {
     implementation(project(":core"))
     implementation(project(":parser"))
     implementation(project(":engines:statevector"))
-    implementation("info.picocli:picocli:4.7.5")
+    implementation(libs.picocli)
     
-    annotationProcessor("info.picocli:picocli-codegen:4.7.5")
+    annotationProcessor(libs.picocli.codegen)
 
-    testImplementation(platform("org.junit:junit-bom:5.10.0"))
-    testImplementation("org.junit.jupiter:junit-jupiter")
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.junit.jupiter)
 }
 
 tasks.test {

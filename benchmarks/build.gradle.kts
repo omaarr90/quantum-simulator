@@ -1,12 +1,12 @@
 plugins {
     id("java")
-    id("me.champeau.jmh") version "0.7.2"
+    alias(libs.plugins.jmh)
 }
 
 dependencies {
     implementation(project(":core"))
-    implementation("org.openjdk.jmh:jmh-core:1.37")
-    annotationProcessor("org.openjdk.jmh:jmh-generator-annprocess:1.37")
+    implementation(libs.jmh.core)
+    annotationProcessor(libs.jmh.generator.annprocess)
 }
 
 jmh {

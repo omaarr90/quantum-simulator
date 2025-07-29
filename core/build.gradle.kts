@@ -3,11 +3,11 @@ plugins {
 }
 
 dependencies {
-    testImplementation(platform("org.junit:junit-bom:5.10.0"))
-    testImplementation("org.junit.jupiter:junit-jupiter")
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.junit.jupiter)
     
     // JSON parsing for validation tests
-    testImplementation("com.fasterxml.jackson.core:jackson-databind:2.15.2")
+    testImplementation(libs.jackson.databind)
     
     // Engine modules for ServiceLoader discovery during testing
     testRuntimeOnly(project(":engines:statevector"))

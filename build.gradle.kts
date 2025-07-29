@@ -1,8 +1,8 @@
 plugins {
     id("java")
-    id("org.graalvm.buildtools.native") version "0.11.0" apply false
-    id("com.diffplug.spotless") version "6.25.0" apply false
-    id("org.jetbrains.dokka") version "1.9.20" apply false
+    alias(libs.plugins.graalvm.buildtools) apply false
+    alias(libs.plugins.spotless) apply false
+    alias(libs.plugins.dokka) apply false
 }
 
 allprojects {
@@ -45,12 +45,12 @@ allprojects {
     // Configure Spotless for code formatting
     configure<com.diffplug.gradle.spotless.SpotlessExtension> {
         java {
-            googleJavaFormat("1.22.0").aosp().reflowLongStrings()
+            googleJavaFormat(libs.versions.google.java.format.get()).aosp().reflowLongStrings()
             target("src/**/*.java")
             targetExclude("**/generated/**", "**/build/**", "**/qasm/**")
         }
         kotlin {
-            ktfmt("0.46").kotlinlangStyle()
+            ktfmt(libs.versions.ktfmt.get()).kotlinlangStyle()
             target("src/**/*.kt")
             targetExclude("**/generated/**", "**/build/**")
         }

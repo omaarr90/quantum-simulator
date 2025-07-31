@@ -1,7 +1,7 @@
 plugins {
     id("java")
     alias(libs.plugins.graalvm.buildtools) apply false
-    alias(libs.plugins.spotless) apply false
+    alias(libs.plugins.spotless)
     alias(libs.plugins.dokka) apply false
 }
 
@@ -10,32 +10,47 @@ allprojects {
     version = "1.0-SNAPSHOT"
 
     apply(plugin = "java")
-    apply (plugin = "org.graalvm.buildtools.native")
-    apply (plugin = "com.diffplug.spotless")
-    apply (plugin = "org.jetbrains.dokka")
+    apply(plugin = "org.graalvm.buildtools.native")
+    apply(plugin = "com.diffplug.spotless")
+    apply(plugin = "org.jetbrains.dokka")
 
     repositories {
         mavenCentral()
+        mavenLocal()
     }
 
     java {
         toolchain.languageVersion.set(JavaLanguageVersion.of(24))
     }
 
+    spotless {
+        java {
+            target("src/**/*.java")
+            eclipse().configFile(rootProject.file("config/eclips-format.xml"))
+            importOrderFile(rootProject.file("config/eclipse.importoder"))
+            removeUnusedImports()
+            formatAnnotations()
+        }
+    }
+
     tasks.compileJava {
         options.encoding = "UTF-8"
-        options.compilerArgs = listOf("-parameters", "-Xdoclint:none", "-Xlint:all", "-Xlint:-exports",
-                                      "-Xlint:-serial", "-Xlint:-try", "-Xlint:-requires-transitive-automatic",
-                                      "-Xlint:-requires-automatic", "-Xlint:-missing-explicit-ctor",
-                                      "-Xlint:-processing")
+        options.compilerArgs = listOf(
+            "-parameters", "-Xdoclint:none", "-Xlint:all", "-Xlint:-exports",
+            "-Xlint:-serial", "-Xlint:-try", "-Xlint:-requires-transitive-automatic",
+            "-Xlint:-requires-automatic", "-Xlint:-missing-explicit-ctor",
+            "-Xlint:-processing"
+        )
     }
 
     tasks.compileTestJava {
         options.encoding = "UTF-8"
-        options.compilerArgs = listOf("-parameters", "-Xdoclint:none", "-Xlint:all", "-Xlint:-exports",
+        options.compilerArgs = listOf(
+            "-parameters", "-Xdoclint:none", "-Xlint:all", "-Xlint:-exports",
             "-Xlint:-serial", "-Xlint:-try", "-Xlint:-requires-transitive-automatic",
             "-Xlint:-requires-automatic", "-Xlint:-missing-explicit-ctor",
-            "-Xlint:-processing")
+            "-Xlint:-processing"
+        )
     }
 
     tasks.test {

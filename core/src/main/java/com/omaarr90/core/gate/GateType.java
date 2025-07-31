@@ -12,58 +12,86 @@ import java.util.Set;
  *
  * <ul>
  *   <li><b>H (Hadamard)</b>: Creates superposition
- *       <pre>H = (1/√2) * [[1,  1],
- *                  [1, -1]]</pre>
+ *       <pre>
+ * H = (1/√2) * [[1,  1],
+ *                  [1, -1]]
+ * </pre>
  *   <li><b>X (Pauli-X)</b>: Bit flip gate
- *       <pre>X = [[0, 1],
- *          [1, 0]]</pre>
+ *       <pre>
+ * X = [[0, 1],
+ *          [1, 0]]
+ * </pre>
  *   <li><b>Y (Pauli-Y)</b>: Bit and phase flip gate
- *       <pre>Y = [[0, -i],
- *          [i,  0]]</pre>
+ *       <pre>
+ * Y = [[0, -i],
+ *          [i,  0]]
+ * </pre>
  *   <li><b>Z (Pauli-Z)</b>: Phase flip gate
- *       <pre>Z = [[1,  0],
- *          [0, -1]]</pre>
+ *       <pre>
+ * Z = [[1,  0],
+ *          [0, -1]]
+ * </pre>
  *   <li><b>S (Phase)</b>: Quarter phase gate
- *       <pre>S = [[1, 0],
- *          [0, i]]</pre>
+ *       <pre>
+ * S = [[1, 0],
+ *          [0, i]]
+ * </pre>
  *   <li><b>SDG (S-dagger)</b>: Conjugate transpose of S gate
- *       <pre>SDG = [[1,  0],
- *            [0, -i]]</pre>
+ *       <pre>
+ * SDG = [[1,  0],
+ *            [0, -i]]
+ * </pre>
  *   <li><b>T (π/8)</b>: Eighth phase gate
- *       <pre>T = [[1,           0],
- *          [0, e^(iπ/4)]]</pre>
+ *       <pre>
+ * T = [[1,           0],
+ *          [0, e^(iπ/4)]]
+ * </pre>
  *   <li><b>TDG (T-dagger)</b>: Conjugate transpose of T gate
- *       <pre>TDG = [[1,            0],
- *            [0, e^(-iπ/4)]]</pre>
+ *       <pre>
+ * TDG = [[1,            0],
+ *            [0, e^(-iπ/4)]]
+ * </pre>
  *   <li><b>CX (CNOT)</b>: Controlled-X gate
- *       <pre>CX = [[1, 0, 0, 0],
+ *       <pre>
+ * CX = [[1, 0, 0, 0],
  *           [0, 1, 0, 0],
  *           [0, 0, 0, 1],
- *           [0, 0, 1, 0]]</pre>
+ *           [0, 0, 1, 0]]
+ * </pre>
  *   <li><b>CZ (Controlled-Z)</b>: Controlled-Z gate
- *       <pre>CZ = [[1, 0, 0,  0],
+ *       <pre>
+ * CZ = [[1, 0, 0,  0],
  *           [0, 1, 0,  0],
  *           [0, 0, 1,  0],
- *           [0, 0, 0, -1]]</pre>
+ *           [0, 0, 0, -1]]
+ * </pre>
  *   <li><b>SWAP</b>: Qubit swap gate
- *       <pre>SWAP = [[1, 0, 0, 0],
+ *       <pre>
+ * SWAP = [[1, 0, 0, 0],
  *             [0, 0, 1, 0],
  *             [0, 1, 0, 0],
- *             [0, 0, 0, 1]]</pre>
+ *             [0, 0, 0, 1]]
+ * </pre>
  * </ul>
  *
  * <h3>Parameterized Gates</h3>
  *
  * <ul>
  *   <li><b>RX(θ)</b>: Rotation around X-axis
- *       <pre>RX(θ) = [[cos(θ/2), -i*sin(θ/2)],
- *              [-i*sin(θ/2), cos(θ/2)]]</pre>
+ *       <pre>
+ * RX(θ) = [[cos(θ/2), -i*sin(θ/2)],
+ *              [-i*sin(θ/2), cos(θ/2)]]
+ * </pre>
  *   <li><b>RY(θ)</b>: Rotation around Y-axis
- *       <pre>RY(θ) = [[cos(θ/2), -sin(θ/2)],
- *              [sin(θ/2),  cos(θ/2)]]</pre>
+ *       <pre>
+ * RY(θ) = [[cos(θ/2), -sin(θ/2)],
+ *              [sin(θ/2),  cos(θ/2)]]
+ * </pre>
  *   <li><b>RZ(θ)</b>: Rotation around Z-axis
- *       <pre>RZ(θ) = [[e^(-iθ/2),        0],
- *              [0,        e^(iθ/2)]]</pre>
+ *       <pre>
+ * RZ(θ) = [[e^(-iθ/2),        0],
+ *              [0,        e^(iθ/2)]]
+ * </pre>
  * </ul>
  */
 public enum GateType {

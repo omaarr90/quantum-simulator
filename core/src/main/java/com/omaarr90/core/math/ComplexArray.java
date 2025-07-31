@@ -125,7 +125,7 @@ public final class ComplexArray {
         return this;
     }
 
-    /* --------------------------  Core arithmetic  -------------------------- */
+    /* -------------------------- Core arithmetic -------------------------- */
 
     /** In‑place element‑wise addition: {@code this[i] += other[i]}. */
     public ComplexArray addInPlace(ComplexArray other) {
@@ -253,7 +253,7 @@ public final class ComplexArray {
         return result;
     }
 
-    /* ---------------------------  Copy / Utils  ---------------------------- */
+    /* --------------------------- Copy / Utils ---------------------------- */
 
     /** Returns a deep copy of this array. */
     public ComplexArray copy() {
@@ -387,7 +387,7 @@ public final class ComplexArray {
         return sb.toString();
     }
 
-    /* -----------------------  Vectorised kernels  -------------------------- */
+    /* ----------------------- Vectorised kernels -------------------------- */
 
     private void vectorAdd(ComplexArray o) {
         int upper = PREFERRED.loopBound(size());
@@ -516,7 +516,7 @@ public final class ComplexArray {
         }
     }
 
-    /* -----------------------  Scalar fallbacks  ---------------------------- */
+    /* ----------------------- Scalar fallbacks ---------------------------- */
 
     private void scalarAdd(ComplexArray o) {
         for (int i = 0; i < size(); i++) {
@@ -576,7 +576,7 @@ public final class ComplexArray {
         }
     }
 
-    /* ----------------------------  Helpers  -------------------------------- */
+    /* ---------------------------- Helpers -------------------------------- */
 
     private void checkSameSize(ComplexArray other) {
         if (other.size() != size()) {
